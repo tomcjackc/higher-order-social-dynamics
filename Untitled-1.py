@@ -1,5 +1,5 @@
 #%%
-print('hi has not changed')
-for i in range(5):
-    print('hi')
+
+print('hi has not changed yet')
+
 #%%
