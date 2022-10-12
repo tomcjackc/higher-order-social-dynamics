@@ -1,8 +1,5 @@
 #%%
-<<<<<<< Updated upstream
 
-print('hi has not changed yet')
-=======
 import xgi
 import matplotlib.pyplot as plt
 import random
