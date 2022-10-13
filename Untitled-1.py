@@ -1,8 +1,4 @@
 #%%
-<<<<<<< Updated upstream
-
-print('hi has not changed yet')
-=======
 import xgi
 import matplotlib.pyplot as plt
 import random
@@ -87,6 +83,5 @@ deg_list = H.nodes.degree.aslist()
 plt.figure(4)
 plt.hist(deg_list)
 
->>>>>>> Stashed changes
 
 #%%
