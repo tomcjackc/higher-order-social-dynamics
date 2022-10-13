@@ -1,4 +1,5 @@
 #%%
+
 import xgi
 import matplotlib.pyplot as plt
 import random
