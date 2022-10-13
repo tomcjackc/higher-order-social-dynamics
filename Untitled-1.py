@@ -84,6 +84,5 @@ deg_list = H.nodes.degree.aslist()
 plt.figure(4)
 plt.hist(deg_list)
 
->>>>>>> Stashed changes
 
 #%%
