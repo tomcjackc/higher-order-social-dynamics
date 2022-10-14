@@ -1,6 +1,7 @@
 # MSci Project on Higher-order Social Dynamics
 
 **Current capabilities**
+
 Given a time-resolved edge list:
 * Simulate the higher order naming game using the "unanimous rule"
 * Supports committed agents
