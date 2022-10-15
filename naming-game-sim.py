@@ -107,10 +107,10 @@ edges = [[[0,1], [0,1,2]],
         [[0,2]]]
 
 H = xgi.generators.classic.empty_hypergraph()
-add_normal_nodes(H, {2:['A']})
+add_normal_nodes(H, {21:['A']})
 add_committed_nodes(H, {1:['B']})
-print(list(H.nodes.attrs))
-print()
+print(H.nodes.attrs[21])
+print(type(H.nodes.attrs))
 for i in range(3):
     interact_and_advance(H, edges, i, show=True)
 
