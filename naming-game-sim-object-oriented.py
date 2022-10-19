@@ -99,9 +99,13 @@ def run_naming_game(H, edges, verbose=False):
 
     return vocab_props
 
-edges = [[[15,16], [15,16,17]],
-        [[16,17], [15,16,17]],
-        [[15,17], [15,16,17]]]
+# edges = [[[15,16], [15,16,17]],
+#         [[16,17], [15,16,17]],
+#         [[15,17], [15,16,17]]]
+
+import json
+with open('data/aggr_15min_cliques_thr2_InVS13.json') as json_file:
+   edges = [json.load(json_file)]
 
 H = Hypergraph()
 H.add_naming_game_node(15, ['A'], False, 1)
