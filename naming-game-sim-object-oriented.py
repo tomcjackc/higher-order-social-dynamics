@@ -1,8 +1,11 @@
 #%%
 
+from enum import unique
 import xgi
 import matplotlib.pyplot as plt
 import random
+import numpy as np
+import itertools
 
 class Hypergraph(xgi.Hypergraph):
     def add_naming_game_node(self, label, vocab, committed=False, beta=1, meta=None):
@@ -51,13 +54,16 @@ class Hypergraph(xgi.Hypergraph):
         edge.remove(speaker)
         broadcast = random.choice(self.get_attr(speaker, 'vocab'))
 
+        test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
+
         if rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
-                for i in edge:
-                    if not self.get_attr(i, 'committed'):
-                        xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
-                if not self.get_attr(speaker, 'committed'):
-                    xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+                if test_stat:
+                    for i in edge:
+                        if not self.get_attr(i, 'committed'):
+                            xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
+                    if not self.get_attr(speaker, 'committed'):
+                        xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
             else:
                 for i in edge:
                     if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
@@ -85,17 +91,17 @@ class Hypergraph(xgi.Hypergraph):
         else:
             return len(self.nodes.filterby_attr(attr, val))
 
-def run_naming_game(H, edges, verbose=False):
+def run_naming_game(H, edges, runlength, verbose=False):
     vocab_props = {'A':[], 'B':[], 'AB':[]}
     vocab_props['A'].append(H.count_by_attr('vocab', ['A'], True))
     vocab_props['B'].append(H.count_by_attr('vocab', ['B'], True))
-    vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True))
-    for i in range(len(edges)):
-        H.interact_and_advance(edges, i, verbose=True)
+    vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True))
+    for i in range(runlength):
+        H.interact_and_advance(edges, 0, verbose=verbose)
 
         vocab_props['A'].append(H.count_by_attr('vocab', ['A'], True))
         vocab_props['B'].append(H.count_by_attr('vocab', ['B'], True))
-        vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True))
+        vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True))
 
     return vocab_props
 
@@ -107,16 +113,36 @@ import json
 with open('data/aggr_15min_cliques_thr2_InVS13.json') as json_file:
    edges = [json.load(json_file)]
 
+#print(edges)
+edges_flat_1 = list(itertools.chain(*edges))
+edges_flat_2 = list(itertools.chain(*edges_flat_1))
+unique_id = list(set(edges_flat_2))
+print(unique_id)
+print(len(unique_id))
+
+
 H = Hypergraph()
-H.add_naming_game_node(15, ['A'], False, 1)
-H.add_naming_game_node(16, ['A'], False, 1)
-H.add_naming_game_node(17, ['B'], True, 1)
-stats = run_naming_game(H, edges, True)
+prop_committed = 0.1
+
+number_committed = int(len(unique_id)*prop_committed)
+committed_nodes = []
+for i in range(number_committed):
+    rand_index = random.randint(0, len(unique_id)-1)
+    committed_nodes.append(unique_id.pop(rand_index))
+
+
+for i in unique_id:
+    H.add_naming_game_node(i, ['A'], False, beta=1)
+for i in committed_nodes:
+    H.add_naming_game_node(i, ['B'], True, beta=0)
+stats = run_naming_game(H, edges, 500, False)
 
 plt.figure(1)
 plt.plot(stats['A'], label='A')
 plt.plot(stats['B'], label='B')
 plt.plot(stats['AB'], label='AB')
+plt.xlabel('Number of interactions')
+plt.ylabel('Proportion of population')
 plt.legend()
 
 
