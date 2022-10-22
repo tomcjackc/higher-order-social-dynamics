@@ -131,7 +131,7 @@ def run_naming_game(H, edges, runlength, verbose=False):
         vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
         vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
 
-    return vocab_props
+    return vocab_counts
 
 def get_edges_and_uniques(fname):
     import json
