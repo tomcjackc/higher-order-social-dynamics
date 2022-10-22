@@ -118,6 +118,16 @@ class Hypergraph(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))/self.num_nodes
         else:
             return len(self.nodes.filterby_attr(attr, val))
+    def count_by_vocab_in_edge(self, edge):
+        count_dict = {'A':0, 'B':0, 'AB':0}
+
+        for i in edge:
+            if len(self.get_attr(i, 'vocab')) == 1:
+                count_dict[self.get_attr(i, 'vocab')[0]] += 1
+            else:
+                count_dict['AB'] += 1
+        return count_dict
+
 
 
 def run_naming_game(H, edges, runlength, rule, verbose=False):
