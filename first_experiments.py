@@ -10,11 +10,11 @@ import csv
 from tqdm import tqdm
 #%%
 prop_committed = 0.05
-beta_non_committed = 0.2
-beta_committed = 0.2
+beta_non_committed = 1
+beta_committed = 1
 ensemble_size = 50
 run_length = 5000
-social_structure = 'InVS13'
+social_structure = 'InVS15'
 
 edges, unique_id = get_edges_and_uniques(f'data/aggr_15min_cliques_thr2_{social_structure}.json')
 

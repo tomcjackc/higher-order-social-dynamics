@@ -60,14 +60,16 @@ class Hypergraph(xgi.Hypergraph):
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
                 if test_stat:
                     for i in edge:
-                        if not self.get_attr(i, 'committed'):
+                        if not self.get_attr(i, 'committed'): # sets all listener nodes to vocab=broadcast
                             xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
-                    if not self.get_attr(speaker, 'committed'):
+                    if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
                         xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+                else:
+                    pass
             else:
                 for i in edge:
                     if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
-                        self.get_attr(i, 'vocab').append(broadcast)
+                        self.get_attr(i, 'vocab').append(broadcast) #adds broadcast to all listener nodes that didn't know broadcast
     
         if verbose:
             print(f'Word broadcast: {broadcast}')
@@ -92,16 +94,16 @@ class Hypergraph(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))
 
 def run_naming_game(H, edges, runlength, verbose=False):
-    vocab_props = {'A':[], 'B':[], 'AB':[]}
-    vocab_props['A'].append(H.count_by_attr('vocab', ['A'], True))
-    vocab_props['B'].append(H.count_by_attr('vocab', ['B'], True))
-    vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True))
+    vocab_props = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+    vocab_props['A'][0] = H.count_by_attr('vocab', ['A'], True)
+    vocab_props['B'][0] = H.count_by_attr('vocab', ['B'], True)
+    vocab_props['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
     for i in range(runlength):
         H.interact_and_advance(edges, 0, verbose=verbose)
 
-        vocab_props['A'].append(H.count_by_attr('vocab', ['A'], True))
-        vocab_props['B'].append(H.count_by_attr('vocab', ['B'], True))
-        vocab_props['AB'].append(H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True))
+        vocab_props['A'][i+1] = H.count_by_attr('vocab', ['A'], True)
+        vocab_props['B'][i+1] = H.count_by_attr('vocab', ['B'], True)
+        vocab_props['AB'][i+1] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
 
     return vocab_props
 
