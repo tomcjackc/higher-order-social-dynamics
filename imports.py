@@ -47,6 +47,7 @@ class Hypergraph(xgi.Hypergraph):
         
         edge = list(edge)
         speaker = rand.choice(edge)
+        before_dict = self.count_by_vocab_in_edge(edge)
         if verbose:
             print(f'{self.edges.members()}')
             print(f'Edge: {edge}')
@@ -87,10 +88,16 @@ class Hypergraph(xgi.Hypergraph):
                      if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
                              self.get_attr(i, 'vocab').append(broadcast)
         
-
+        after_dict = self.count_by_vocab_in_edge(edge)
+        diff_dict = {}
+        for i in after_dict:
+            diff_dict[i] = after_dict[i]-before_dict[i]
+        
         if verbose:
             print(f'Word broadcast: {broadcast}')
             print(f'State of system after interaction: {list(self.nodes.attrs)}')
+        
+        return diff_dict
 
     def get_attr(self, node, attr):
         """Function to easily obtain a given attribute from a given node in a hypergraph.
@@ -111,18 +118,18 @@ class Hypergraph(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))
 
 def run_naming_game(H, edges, runlength, verbose=False):
-    vocab_props = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
-    vocab_props['A'][0] = H.count_by_attr('vocab', ['A'], True)
-    vocab_props['B'][0] = H.count_by_attr('vocab', ['B'], True)
-    vocab_props['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
+    vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+    vocab_counts['A'][0] = H.count_by_attr('vocab', ['A'], False)
+    vocab_counts['B'][0] = H.count_by_attr('vocab', ['B'], False)
+    vocab_counts['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], False)+H.count_by_attr('vocab', ['B', 'A'], False)
     H.add_edges_from(edges[0])
     random_edges = rand.choice(H.edges.members(), size = runlength)
     for i,edge in enumerate(random_edges):
-        H.interact_and_advance(edge, verbose=verbose)
+        diff_dict = H.interact_and_advance(edge, verbose=verbose)
 
-        vocab_props['A'][i+1] = H.count_by_attr('vocab', ['A'], True)
-        vocab_props['B'][i+1] = H.count_by_attr('vocab', ['B'], True)
-        vocab_props['AB'][i+1] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
+        vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
+        vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
+        vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
 
     return vocab_props
 
