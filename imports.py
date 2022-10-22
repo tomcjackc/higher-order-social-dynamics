@@ -7,6 +7,8 @@ import random
 import numpy as np
 import numpy.random as rand
 import itertools
+from tqdm import tqdm
+
 
 class Hypergraph(xgi.Hypergraph):
     def add_naming_game_node(self, label, vocab, committed=False, beta=1, meta=None):
@@ -117,6 +119,17 @@ class Hypergraph(xgi.Hypergraph):
         else:
             return len(self.nodes.filterby_attr(attr, val))
 
+
+def run_naming_game(H, edges, runlength, rule, verbose=False):
+    vocab_props = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+    vocab_props['A'][0] = H.count_by_attr('vocab', ['A'], True)
+    vocab_props['B'][0] = H.count_by_attr('vocab', ['B'], True)
+    vocab_props['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
+    H.add_edges_from(edges[0])
+    random_edges = rand.choice(H.edges.members(), size = runlength)
+    for i, edge in tqdm(enumerate(random_edges)):
+        H.interact_and_advance(edge, verbose=verbose, rule=rule)
+
 def run_naming_game(H, edges, runlength, verbose=False):
     vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
     vocab_counts['A'][0] = H.count_by_attr('vocab', ['A'], False)
@@ -126,6 +139,7 @@ def run_naming_game(H, edges, runlength, verbose=False):
     random_edges = rand.choice(H.edges.members(), size = runlength)
     for i,edge in enumerate(random_edges):
         diff_dict = H.interact_and_advance(edge, verbose=verbose)
+
 
         vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
         vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
