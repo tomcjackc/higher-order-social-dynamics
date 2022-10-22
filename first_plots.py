@@ -15,7 +15,7 @@ from numpy import genfromtxt
 prop_committed = 0.05
 beta_non_committed = 0.2
 beta_committed = 0.2
-ensemble_size = 50
+ensemble_size = 1
 run_length = 5000
 social_structure = 'InVS15'
 

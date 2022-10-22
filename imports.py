@@ -118,6 +118,7 @@ class Hypergraph(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))/self.num_nodes
         else:
             return len(self.nodes.filterby_attr(attr, val))
+            
     def count_by_vocab_in_edge(self, edge):
         count_dict = {'A':0, 'B':0, 'AB':0}
 
@@ -159,7 +160,7 @@ def run_naming_game(H, edges, runlength, verbose=False):
 
 def get_edges_and_uniques(fname):
     import json
-    with open('data/aggr_15min_cliques_thr2_InVS13.json') as json_file:
+    with open(fname) as json_file:
         edges = [json.load(json_file)]
 
     #print(edges)
