@@ -11,12 +11,12 @@ importlib.reload(imports)
 import csv
 from tqdm import tqdm
 #%%
-prop_committed = 0.05
-beta_non_committed = 0.2
-beta_committed = 0.2
-ensemble_size = 1
-run_length = 5000
-social_structure = 'InVS15'
+prop_committed = 0.03
+beta_non_committed = 0.28
+beta_committed = 0.28
+ensemble_size = 50
+run_length = 10**6
+social_structure = 'Thiers13'
 
 edges, unique_id = get_edges_and_uniques(f'data/aggr_15min_cliques_thr2_{social_structure}.json')
 
