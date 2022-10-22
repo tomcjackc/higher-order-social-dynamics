@@ -5,6 +5,7 @@ import xgi
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+import numpy.random as rand
 import itertools
 
 class Hypergraph(xgi.Hypergraph):
@@ -30,7 +31,7 @@ class Hypergraph(xgi.Hypergraph):
         self._edge.clear()
         self._edge_attr.clear()
 
-    def interact_and_advance(self, edges, frame_num, rule='Unanimous', verbose=False):
+    def interact_and_advance(self, edge, rule='Unanimous', verbose=False):
         """Function which carries out one interaction in the higher-order naming game on a hypergraph and advances to the next frame.
 
         Args:
@@ -42,16 +43,15 @@ class Hypergraph(xgi.Hypergraph):
         Returns:
             None
         """
-        self.clear_edges()
-        self.add_edges_from(edges[frame_num])
-        edge = list(random.choice(self.edges.members()))
-        speaker = random.choice(edge)
+        
+        
+        edge = list(edge)
+        speaker = rand.choice(edge)
         if verbose:
             print(f'{self.edges.members()}')
-            print(f'Frame number: {frame_num}')
             print(f'Edge: {edge}')
             print(f'Speaker: {speaker}')
-        edge.remove(speaker)
+        
         broadcast = random.choice(self.get_attr(speaker, 'vocab'))
 
         test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
@@ -70,7 +70,24 @@ class Hypergraph(xgi.Hypergraph):
                 for i in edge:
                     if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
                         self.get_attr(i, 'vocab').append(broadcast) #adds broadcast to all listener nodes that didn't know broadcast
-    
+        if rule == 'Union':
+            if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
+                 if test_stat:
+                     for i in edge:
+                         if not self.get_attr(i, 'committed'): # sets all listener nodes to vocab=broadcast
+                             xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
+                     if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
+                         xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+                 else:
+                     for i in edge:
+                         if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
+                             self.get_attr(i, 'vocab').append(broadcast)
+            else:
+                 for i in edge:
+                     if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
+                             self.get_attr(i, 'vocab').append(broadcast)
+        
+
         if verbose:
             print(f'Word broadcast: {broadcast}')
             print(f'State of system after interaction: {list(self.nodes.attrs)}')
@@ -98,8 +115,10 @@ def run_naming_game(H, edges, runlength, verbose=False):
     vocab_props['A'][0] = H.count_by_attr('vocab', ['A'], True)
     vocab_props['B'][0] = H.count_by_attr('vocab', ['B'], True)
     vocab_props['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
-    for i in range(runlength):
-        H.interact_and_advance(edges, 0, verbose=verbose)
+    H.add_edges_from(edges[0])
+    random_edges = rand.choice(H.edges.members(), size = runlength)
+    for i,edge in enumerate(random_edges):
+        H.interact_and_advance(edge, verbose=verbose)
 
         vocab_props['A'][i+1] = H.count_by_attr('vocab', ['A'], True)
         vocab_props['B'][i+1] = H.count_by_attr('vocab', ['B'], True)
