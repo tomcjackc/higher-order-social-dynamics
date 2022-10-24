@@ -12,8 +12,6 @@ from numpy import genfromtxt
 
 plt.style.use('mpl_style.mplstyle')
 
-
-
 #%%
 
 # linear time axis
@@ -45,10 +43,15 @@ AB_data_av = np.median(AB_data, axis=0)
 AB_data_25 = np.percentile(AB_data, 25, axis=0)
 AB_data_75 = np.percentile(AB_data, 75, axis=0)
 
+t = np.linspace(0, run_length, num=run_length+1, endpoint=True)
+
 plt.figure(1)
-plt.plot(A_data_av, color='tab:blue', label='A')
-plt.plot(B_data_av, color='tab:orange', label='B')
-plt.plot(AB_data_av, color='tab:green', label='A,B')
+plt.plot(t, A_data_av, color='tab:blue', label='A')
+plt.fill_between(t, y1=A_data_25, y2=A_data_75, color='tab:blue', alpha=0.2)
+plt.plot(t, B_data_av, color='tab:orange', label='B')
+plt.fill_between(t, y1=B_data_25, y2=B_data_75, color='tab:orange', alpha=0.2)
+plt.plot(t, AB_data_av, color='tab:green', label='A,B')
+plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, color='tab:green', alpha=0.2)
 plt.legend()
 plt.xlabel(r'Time, $t$ / number of interactions')
 plt.ylabel(r'$N_{x}(t)$')
