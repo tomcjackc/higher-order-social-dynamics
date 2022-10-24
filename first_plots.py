@@ -16,7 +16,7 @@ plt.style.use('mpl_style.mplstyle')
 
 #%%
 
-# hello 
+# Fuck GitHub
 # linear time axis
 
 prop_committed = 0.05
