@@ -10,17 +10,18 @@ import csv
 from tqdm import tqdm
 from numpy import genfromtxt
 
-plt.style.use('mpl_style.mplstyle')
+
+
 
 #%%
 
 # linear time axis
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
+prop_committed = 0.05
+beta_non_committed = 0.2
+beta_committed = 0.2
 ensemble_size = 1
-run_length = 100
+run_length = 5000
 social_structure = 'InVS13'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
@@ -63,14 +64,14 @@ plt.show()
 
 # logarithmic time axis
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
-ensemble_size = 50
-run_length = 10**6
+prop_committed = 0.05
+beta_non_committed = 0.2
+beta_committed = 0.2
+ensemble_size = 1
+run_length = 5000
 social_structures = ['InVS13', 'InVS15', 'LH10', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures:
+for social_structure in social_structures[:1]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
