@@ -1,4 +1,5 @@
 #%%
+#hello
 
 from enum import unique
 import xgi
@@ -8,6 +9,9 @@ import numpy as np
 import numpy.random as rand
 import itertools
 from tqdm import tqdm
+import csv
+
+#%%
 
 
 class Hypergraph(xgi.Hypergraph):
@@ -50,6 +54,8 @@ class Hypergraph(xgi.Hypergraph):
         edge = list(edge)
         speaker = rand.choice(edge)
         before_dict = self.count_by_vocab_in_edge(edge)
+        
+        
         if verbose:
             print(f'{self.edges.members()}')
             print(f'Edge: {edge}')
@@ -65,8 +71,7 @@ class Hypergraph(xgi.Hypergraph):
                     for i in edge:
                         if not self.get_attr(i, 'committed'): # sets all listener nodes to vocab=broadcast
                             xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
-                    if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
-                        xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+                 
                 else:
                     pass
             else:
@@ -92,6 +97,7 @@ class Hypergraph(xgi.Hypergraph):
         
         after_dict = self.count_by_vocab_in_edge(edge)
         diff_dict = {}
+        
         for i in after_dict:
             diff_dict[i] = after_dict[i]-before_dict[i]
         
@@ -131,15 +137,6 @@ class Hypergraph(xgi.Hypergraph):
 
 
 
-def run_naming_game(H, edges, runlength, rule, verbose=False):
-    vocab_props = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
-    vocab_props['A'][0] = H.count_by_attr('vocab', ['A'], True)
-    vocab_props['B'][0] = H.count_by_attr('vocab', ['B'], True)
-    vocab_props['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], True)+H.count_by_attr('vocab', ['B', 'A'], True)
-    H.add_edges_from(edges[0])
-    random_edges = rand.choice(H.edges.members(), size = runlength)
-    for i, edge in tqdm(enumerate(random_edges)):
-        H.interact_and_advance(edge, verbose=verbose, rule=rule)
 
 def run_naming_game(H, edges, runlength, verbose=False):
     vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
@@ -169,7 +166,34 @@ def get_edges_and_uniques(fname):
     unique_id = list(set(edges_flat_2))
     return edges, unique_id
 
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure):
+    edges, unique_id = get_edges_and_uniques(f'data/aggr_15min_cliques_thr2_{social_structure}.json')
 
+    for j in tqdm(range(ensemble_size)):
+        H = Hypergraph()
+
+        temp_unique_id = unique_id.copy()
+
+        number_committed = int(len(temp_unique_id)*prop_committed)
+        committed_nodes = []
+        for i in range(number_committed):
+            rand_index = random.randint(0, len(temp_unique_id)-1)
+            committed_nodes.append(temp_unique_id.pop(rand_index))
+
+
+        for i in temp_unique_id:
+            H.add_naming_game_node(i, ['A'], False, beta=beta_non_committed)
+        for i in committed_nodes:
+            H.add_naming_game_node(i, ['B'], True, beta=beta_committed)
+
+
+        output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+        with open(f'outputs/{output_fname}.csv', 'a') as f:
+            write = csv.writer(f)
+            stats = run_naming_game(H, edges, run_length, False)
+            write.writerow(stats['A'])
+            write.writerow(stats['B'])
+            write.writerow(stats['AB'])
 
 
 #%%

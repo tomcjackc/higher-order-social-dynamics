@@ -18,12 +18,12 @@ plt.style.use('mpl_style.mplstyle')
 
 # linear time axis
 
-prop_committed = 0.05
-beta_non_committed = 0.2
-beta_committed = 0.2
+prop_committed = 0.03
+beta_non_committed = 0.28
+beta_committed = 0.28
 ensemble_size = 1
-run_length = 5000
-social_structure = 'InVS15'
+run_length = 100
+social_structure = 'InVS13'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
@@ -50,7 +50,7 @@ plt.plot(A_data_av, color='tab:blue', label='A')
 plt.plot(B_data_av, color='tab:orange', label='B')
 plt.plot(AB_data_av, color='tab:green', label='A,B')
 plt.legend()
-plt.xlabel('Time, $t$ / number of interactions')
+plt.xlabel(r'Time, $t$ / number of interactions')
 plt.ylabel(r'$N_{x}(t)$')
 plt.legend(title=r'$x$')
 plt.savefig(f'figures/{fname}_lintime.pdf')
