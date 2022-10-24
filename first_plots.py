@@ -17,15 +17,15 @@ from numpy import genfromtxt
 # linear time axis
 
 prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
+beta_non_committed = 0.41
+beta_committed = 0.41
 ensemble_size = 50
 run_length = 10**6
 social_structure = 'InVS15'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
-data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+data = genfromtxt(f'outputs/{fname}.csv', delimiter=',') #to change to pandas instead
 
 print('loaded data')
 
@@ -64,20 +64,20 @@ plt.show()
 THIS SECTION CAN REPRODUCE GIOVANI'S PLOTS FROM PAGE 4
 
 WE SHOULD CREATE ON PAIR FOR BETA = 0.28 AND ONE PAIR FOR BETA = 0.41
-AND PRESENT THOSE IN THE MEETING
+AND PRESENT THOSE 
 
 """
 
 
 prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
+beta_non_committed = 0.41
+beta_committed = 0.41
 ensemble_size = 50
 run_length = 10**6
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures:
+for social_structure in social_structures[:1]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
@@ -107,19 +107,19 @@ for social_structure in social_structures:
 
 plt.legend()
 plt.title
-plt.savefig(f'figures/{fname}_lintime.pdf')
+plt.savefig(f'figures/{fname}_B_lintime.pdf')
 plt.show()
 
 
 prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
+beta_non_committed = 0.41
+beta_committed = 0.41
 ensemble_size = 50
 run_length = 10**6
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures:
+for social_structure in social_structures[:1]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
@@ -148,7 +148,7 @@ for social_structure in social_structures:
 
 plt.legend()
 plt.title
-plt.savefig(f'figures/{fname}_lintime.pdf')
+plt.savefig(f'figures/{fname}_AB_lintime.pdf')
 plt.show()
 
 
