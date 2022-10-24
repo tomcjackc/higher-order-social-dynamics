@@ -16,6 +16,7 @@ plt.style.use('mpl_style.mplstyle')
 
 #%%
 
+# hello 
 # linear time axis
 
 prop_committed = 0.05
