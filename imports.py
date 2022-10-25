@@ -15,7 +15,7 @@ import csv
 
 
 class Hypergraph(xgi.Hypergraph):
-    def add_naming_game_node(self, label, vocab, committed=False, beta=1, meta=None):
+    def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
         """Adds a specified selection of nodes to the hypergraph.
         The vocabularies of the nodes can be specified.
 
@@ -27,7 +27,10 @@ class Hypergraph(xgi.Hypergraph):
             None
         """
         # label = self.num_nodes
-        self.add_nodes_from([(label, {'vocab':vocab, 'committed':committed, 'beta':beta, 'metadata':meta})])
+        N = len(list_nodes)
+        
+        list_dict = [{'vocab':vocab, 'committed':committed, 'beta':beta}]*N
+        self.add_nodes_from(zip(list_nodes, list_dict))
         return None
     
     def clear_edges(self):
@@ -172,19 +175,18 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     for j in tqdm(range(ensemble_size)):
         H = Hypergraph()
 
-        temp_unique_id = unique_id.copy()
+        number_committed = round(len(unique_id)*prop_committed)
+        rand.shuffle(unique_id)
+        committed_nodes, uncommitted_nodes = np.split(unique_id, number_committed)
+        
+        
+        
 
-        number_committed = int(len(temp_unique_id)*prop_committed)
-        committed_nodes = []
-        for i in range(number_committed):
-            rand_index = random.randint(0, len(temp_unique_id)-1)
-            committed_nodes.append(temp_unique_id.pop(rand_index))
 
-
-        for i in temp_unique_id:
-            H.add_naming_game_node(i, ['A'], False, beta=beta_non_committed)
-        for i in committed_nodes:
-            H.add_naming_game_node(i, ['B'], True, beta=beta_committed)
+        
+        H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
+        
+        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
 
 
         output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
