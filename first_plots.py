@@ -10,7 +10,12 @@ import csv
 from tqdm import tqdm
 from numpy import genfromtxt
 
+'''
+### USE THIS TO MAKE PRETTY PICTURES, DOES NOT WORK FOR MARIUS ###
 
+
+plt.style.use(mpl_style.mplstyle)
+'''
 
 #%%
 
@@ -70,14 +75,14 @@ AND PRESENT THOSE
 
 
 prop_committed = 0.03
-beta_non_committed = 0.41
-beta_committed = 0.41
-ensemble_size = 50
-run_length = 10**6
+beta_non_committed = 0.28
+beta_committed = 0.28
+ensemble_size = 10
+run_length = 500
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures[:1]:
+for social_structure in social_structures:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
@@ -106,20 +111,21 @@ for social_structure in social_structures[:1]:
     plt.ylabel(r'$n_{B+B_c}(t)$', fontsize=16)
 
 plt.legend()
-plt.title
+plt.title(r'$\beta$' + f' = {beta_non_committed}')
+plt.xscale('log')
 plt.savefig(f'figures/{fname}_B_lintime.pdf')
 plt.show()
 
 
 prop_committed = 0.03
-beta_non_committed = 0.41
-beta_committed = 0.41
-ensemble_size = 50
-run_length = 10**6
+beta_non_committed = 0.28
+beta_committed = 0.28
+ensemble_size = 10
+run_length = 500
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures[:1]:
+for social_structure in social_structures:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
@@ -147,7 +153,8 @@ for social_structure in social_structures[:1]:
     plt.ylabel(r'$n_{AB}(t)$', fontsize=16)
 
 plt.legend()
-plt.title
+plt.xscale('log')
+plt.title(r'$\beta$' + f' = {beta_non_committed}')
 plt.savefig(f'figures/{fname}_AB_lintime.pdf')
 plt.show()
 
