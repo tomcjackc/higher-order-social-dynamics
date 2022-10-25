@@ -22,13 +22,13 @@ plt.style.use(mpl_style.mplstyle)
 # linear time axis
 
 prop_committed = 0.03
-beta_non_committed = 0.41
-beta_committed = 0.41
-ensemble_size = 50
-run_length = 100
+beta_non_committed = 0.28
+beta_committed = 0.28
+ensemble_size = 30
+run_length = 10000
 
 #%%
-social_structure = 'InVS15'
+social_structure = 'Thiers13'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
@@ -59,10 +59,10 @@ plt.plot(t, B_data_av, color='tab:orange', label='B')
 plt.fill_between(t, y1=B_data_25, y2=B_data_75, color='tab:orange', alpha=0.2)
 plt.plot(t, AB_data_av, color='tab:green', label='A,B')
 plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, color='tab:green', alpha=0.2)
-plt.legend()
+plt.legend(title=social_structure)
 plt.xlabel(r'Time, $t$ / number of interactions')
 plt.ylabel(r'$N_{x}(t)$')
-plt.legend(title=r'$x$')
+plt.legend(title=social_structure)
 plt.savefig(f'figures/{fname}_lintime.pdf')
 plt.show()
 
@@ -191,9 +191,10 @@ for social_structure in social_structures:
     plt.plot(t, AB_data_av, color='tab:green', label='A,B')
     plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, color='tab:green', alpha=0.2)
     plt.xscale('log')
+    plt.title(r'$\beta$' + f' = {beta_non_committed}')
     plt.xlabel('Time, $t$ / number of interactions')
     plt.ylabel(r'$N_{x}(t)$')
-    plt.legend(title=r'$x$')
+    plt.legend(title=social_structure)
     plt.savefig(f'figures/{fname}_logtime.pdf')
     plt.show()
 
