@@ -24,8 +24,8 @@ plt.style.use(mpl_style.mplstyle)
 prop_committed = 0.03
 beta_non_committed = 0.28
 beta_committed = 0.28
-ensemble_size = 30
-run_length = 10000
+ensemble_size = 50
+run_length = 10**4
 
 #%%
 social_structure = 'Thiers13'

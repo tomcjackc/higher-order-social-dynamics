@@ -74,19 +74,18 @@ class Hypergraph(xgi.Hypergraph):
                     #print('AGREEMENT')
                     for j in edge:
                         if not self.get_attr(j, 'committed'): # sets all listener nodes to vocab=broadcast
-                            #print(j, self.get_attr(j, 'vocab'))
+                            
                             xgi.classes.function.set_node_attributes(self, {j: {'vocab':[broadcast]}})
-                            #print(j, self.get_attr(j, 'vocab'))
-                        # if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
-                        #     xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+                            
                 else:
                     pass
             else:
                 for j in edge:
                     if broadcast not in self.get_attr(j, 'vocab') and not self.get_attr(j, 'committed'):
                         
-                        xgi.classes.function.set_node_attributes(self, {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
-                        #self.get_attr(j, 'vocab').append(broadcast) #adds broadcast to all listener nodes that didn't know broadcast
+                        xgi.classes.function.set_node_attributes(self, \
+                        {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
+        
                         
         if rule == 'Union':
             if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
@@ -103,7 +102,8 @@ class Hypergraph(xgi.Hypergraph):
             else:
                  for i in edge:
                      if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
-                             self.get_attr(i, 'vocab').append(broadcast)
+                             xgi.classes.function.set_node_attributes(self, \
+                            {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
         
         after_dict = self.count_by_vocab_in_edge(edge)
         diff_dict = {}
@@ -117,7 +117,7 @@ class Hypergraph(xgi.Hypergraph):
             print(before_dict)
             print(after_dict)
             print(diff_dict)
-            #print(f'State of system after interaction: {list(self.nodes.attrs)}')
+            
         
         
         
@@ -151,8 +151,6 @@ class Hypergraph(xgi.Hypergraph):
             elif self.get_attr(i, 'vocab') == ['A', 'B'] or self.get_attr(i, 'vocab') == ['B', 'A']:
                 
                 count_dict['AB'] += 1
-            
-               
         return count_dict
 
 
@@ -190,22 +188,17 @@ def run_naming_game(H, edges, runlength, verbose=False):
     random_edges = rand.choice(H.edges.members(), size = runlength)
     for i,edge in enumerate(random_edges):
         diff_dict = H.interact_and_advance(edge, verbose=verbose)
-
-
         vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
         vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
         vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-        #print(vocab_counts['AB'][i])
-        #print(vocab_counts['AB'][i+1])
-        #print(H.count_by_attr('vocab', ['A', 'B'], False)+H.count_by_attr('vocab', ['B', 'A'], False))
+        
     return vocab_counts
 
 def get_edges_and_uniques(fname):
     import json
     with open(fname) as json_file:
         edges = [json.load(json_file)]
-
-    #print(edges)
+        
     edges_flat_1 = list(itertools.chain(*edges))
     edges_flat_2 = list(itertools.chain(*edges_flat_1))
     unique_id = list(set(edges_flat_2))
@@ -220,17 +213,12 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         number_committed = round(len(unique_id)*prop_committed)
         rand.shuffle(unique_id)
 
-        
         committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
-        
-        
-
         
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
 
-        #print(list(H.nodes.attrs))
         output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
