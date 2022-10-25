@@ -25,7 +25,9 @@ prop_committed = 0.03
 beta_non_committed = 0.41
 beta_committed = 0.41
 ensemble_size = 50
-run_length = 10**6
+run_length = 100
+
+#%%
 social_structure = 'InVS15'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
@@ -74,12 +76,6 @@ AND PRESENT THOSE
 """
 
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
-ensemble_size = 10
-run_length = 500
-
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
 for social_structure in social_structures:
@@ -117,11 +113,7 @@ plt.savefig(f'figures/{fname}_B_lintime.pdf')
 plt.show()
 
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
-ensemble_size = 10
-run_length = 500
+
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
@@ -165,11 +157,7 @@ plt.show()
 
 # logarithmic time axis
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
-ensemble_size = 10
-run_length = 500
+
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
 for social_structure in social_structures:

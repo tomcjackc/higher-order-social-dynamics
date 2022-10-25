@@ -100,7 +100,7 @@ class Hypergraph(xgi.Hypergraph):
         
         after_dict = self.count_by_vocab_in_edge(edge)
         diff_dict = {}
-        
+        print(after_dict)
         for i in after_dict:
             diff_dict[i] = after_dict[i]-before_dict[i]
         
@@ -155,7 +155,7 @@ def run_naming_game(H, edges, runlength, verbose=False):
         vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
         vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
         vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-
+        print(diff_dict['AB'])
     return vocab_counts
 
 def get_edges_and_uniques(fname):
@@ -177,11 +177,11 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
 
         number_committed = round(len(unique_id)*prop_committed)
         rand.shuffle(unique_id)
-        committed_nodes, uncommitted_nodes = np.split(unique_id, number_committed)
-        
-        
-        
 
+        
+        committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
+        
+        
 
         
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
