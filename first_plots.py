@@ -25,10 +25,10 @@ prop_committed = 0.03
 beta_non_committed = 0.28
 beta_committed = 0.28
 ensemble_size = 50
-run_length = 10**4
+run_length = 10**6
 
 #%%
-social_structure = 'Thiers13'
+social_structure = 'InVS15'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 

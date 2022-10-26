@@ -17,7 +17,7 @@ prop_committed = 0.03
 beta_non_committed = 0.28
 beta_committed = 0.28
 ensemble_size = 50
-run_length = 10**5
+run_length = 10**6
 social_structures = [ 'InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
 for i in social_structures:

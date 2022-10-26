@@ -10,6 +10,8 @@ import numpy.random as rand
 import itertools
 from tqdm import tqdm
 import csv
+import os
+
 
 #%%
 
@@ -82,7 +84,7 @@ class Hypergraph(xgi.Hypergraph):
             else:
                 for j in edge:
                     if broadcast not in self.get_attr(j, 'vocab') and not self.get_attr(j, 'committed'):
-                        
+                        ### The update below could be improved
                         xgi.classes.function.set_node_attributes(self, \
                         {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
         
@@ -118,9 +120,6 @@ class Hypergraph(xgi.Hypergraph):
             print(after_dict)
             print(diff_dict)
             
-        
-        
-        
         return diff_dict
 
     def get_attr(self, node, attr):
@@ -159,26 +158,7 @@ class Hypergraph(xgi.Hypergraph):
 def run_naming_game(H, edges, runlength, verbose=False):
     '''
     Consider using only lists instead of Vocab Counts
-
-    Parameters
-    ----------
-    H : TYPE
-        DESCRIPTION.
-    edges : TYPE
-        DESCRIPTION.
-    runlength : TYPE
-        DESCRIPTION.
-    verbose : TYPE, optional
-        DESCRIPTION. The default is False.
-
-    Returns
-    -------
-    vocab_counts : TYPE
-        DESCRIPTION.
-
     '''
-    
-    
     vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
     vocab_counts['A'][0] = H.count_by_attr('vocab', ['A'], False)
     vocab_counts['B'][0] = H.count_by_attr('vocab', ['B'], False)
@@ -191,8 +171,8 @@ def run_naming_game(H, edges, runlength, verbose=False):
         vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
         vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
         vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-        
     return vocab_counts
+
 
 def get_edges_and_uniques(fname):
     import json
@@ -204,9 +184,17 @@ def get_edges_and_uniques(fname):
     unique_id = list(set(edges_flat_2))
     return edges, unique_id
 
+
+
 def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure):
     edges, unique_id = get_edges_and_uniques(f'data/aggr_15min_cliques_thr2_{social_structure}.json')
-
+    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    
+    ### This part deletes a file if it already exists
+    if os.path.exists(f"outputs/{output_fname}.csv"):
+        os.remove(f"outputs/{output_fname}.csv")
+    ###
+    
     for k in tqdm(range(ensemble_size)):
         H = Hypergraph()
 
@@ -219,7 +207,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
 
-        output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = run_naming_game(H, edges, run_length, False)
