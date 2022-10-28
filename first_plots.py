@@ -25,10 +25,10 @@ prop_committed = 0.03
 beta_non_committed = 0.28
 beta_committed = 0.28
 ensemble_size = 50
-run_length = 10**6
+run_length = 10**4
 
 #%%
-social_structure = 'InVS15'
+social_structure = 'LyonSchool'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
@@ -160,7 +160,7 @@ plt.show()
 
 social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures:
+for social_structure in social_structures[1:2]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
