@@ -9,8 +9,6 @@ Created on Fri Oct 14 13:31:24 2022
 import xgi
 import matplotlib.pyplot as plt
 import random
-
-
 import numpy as np
 from scipy import random
 import networkx as nx

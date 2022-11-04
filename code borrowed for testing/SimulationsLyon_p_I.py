@@ -1,7 +1,8 @@
+#%%
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[44]:
+
 
 
 import numpy as np
@@ -14,9 +15,9 @@ import matplotlib.pyplot as plt
 import os
 import json
 from time import time
+import csv
 
 
-# In[45]:
 
 
 #Model constructor
@@ -124,15 +125,18 @@ class HigherOrderNamingGame():
         self.t_max = t_max
         
         #Opening file to save densities results
-        densities_path = path + 'HONG_densities_beta%.4f_p%.2f.csv'%(self.beta, self.p)
-        f = open(densities_path,'w')
-        f.write('time,n_A+p,n_B,n_AB\n')
+        densities_path = '../outputs/test.csv'
+        f = open(densities_path,'a')
+        
 
         #Saving values at t=0
         n_Ap, n_B, n_AB = self.get_densities()
-        line = "%i,%.3f,%.3f,%.3f\n"%(self.t, n_Ap, n_B, n_AB)
-        f.write(line)
+        
+        
 
+        A_list = [n_Ap]
+        B_list = [n_B]
+        AB_list = [n_AB]
         
         while self.t <= self.t_max:
             self.t += 1
@@ -152,44 +156,46 @@ class HigherOrderNamingGame():
             self.play_on_simplex(simplex)
                 
             #Storing the values every check_every time steps:
+        
             if self.t%check_every==0:
                 n_Ap, n_B, n_AB = self.get_densities()
-                line = "%i,%.3f,%.3f,%.3f\n"%(self.t, n_Ap, n_B, n_AB)
-                f.write(line)
+                A_list.append(n_Ap)
+                B_list.append(n_B)
+                AB_list.append(n_AB)
+                
+                
+                
                 
                 #Also checking if we reached the absorbing state:
-                if n_Ap==1 or n_B==1:
-                    f.close()   
-                    print('DONE! Reached the absorbing state.')
-                    return None
-                
-        f.close()    
+                # if n_Ap==1 or n_B==1:
+                #     f.close()   
+                #     print('DONE! Reached the absorbing state.')
+                #     return None
+        write = csv.writer(f)
+        write.writerow(A_list)
+        write.writerow(B_list)
+        write.writerow(AB_list)
+
+        # f.close()
         print('DONE! Run out of time...')
 
 
-# In[9]:
+
+#%%
 
 
-#datasetlist = ['InVS13','InVS15','LH10','LyonSchool','SFHH','Thiers13']
-
-
-# Reading
-
-# In[48]:
-
-
-dataset_dir = 'data/'
+dataset_dir = '../data/'
 n_minutes = 15
 
 dataset = 'LyonSchool' # ['InVS13','InVS15','LH10','LyonSchool','SFHH','Thiers13']
-thr = 2 #[1,3,5]
+thr = 1 #[1,3,5]
 
 #Reading
 filename = dataset_dir+'aggr_'+str(n_minutes)+'min_cliques_thr'+str(thr)+'_'+dataset+'.json'
 simplices = json.load(open(filename,'r'))
 
 
-# In[ ]:
+#%%
 
 
 rule = 'intersection'
@@ -199,15 +205,15 @@ p = 0.03
 n_A = 0
 
 t_max = 1e5
-check_every = 50
+check_every = 1
 print_every=5000
 
-n_runs = 15
+n_runs = 10
 
 for run_id in range(n_runs):
     print(run_id, beta)
 
-    output_path = 'outputs/'
+    output_path = '../outputs/'
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 

@@ -167,7 +167,6 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
-        #print(vocab_counts['AB'][0])
         self.add_edges_from(edges[0])
         random_edges = rand.choice(self.edges.members(), size = runlength)
         for i,edge in enumerate(random_edges):
@@ -186,22 +185,21 @@ def get_edges_and_uniques(fname):
     edges_flat_1 = list(itertools.chain(*edges))
     edges_flat_2 = list(itertools.chain(*edges_flat_1))
     unique_id = list(set(edges_flat_2))
-    print(len(unique_id))
     return edges, unique_id
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure):
-    edges, unique_id = get_edges_and_uniques(f'data/aggr_15min_cliques_thr2_{social_structure}.json')
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous'):
+    edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr2_{social_structure}.json')
     output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
-    if os.path.exists(f"outputs/{output_fname}.csv"):
-        os.remove(f"outputs/{output_fname}.csv")
+    if os.path.exists(f"../outputs/{output_fname}.csv"):
+        os.remove(f"../outputs/{output_fname}.csv")
     ###
     
     for k in tqdm(range(ensemble_size)):
-        H = HigherOrderNamingGame(rule='Unanimous')
+        H = HigherOrderNamingGame(rule=rule)
 
         number_committed = round(len(unique_id)*prop_committed)
         rand.shuffle(unique_id)
@@ -211,9 +209,9 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
+        
 
-
-        with open(f'outputs/{output_fname}.csv', 'a') as f:
+        with open(f'../outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = H.run(edges, run_length, False)
             write.writerow(stats['A'])
