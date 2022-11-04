@@ -21,8 +21,8 @@ mpl.style.use('mpl_style.mplstyle')
 #%%
 
 prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
+beta_non_committed = 0.2759
+beta_committed = 0.2759
 ensemble_size = 15
 run_length = 10**5
 
@@ -162,7 +162,7 @@ plt.show()
 
 social_structures = {'InVS15':217, 'LyonSchool':218, 'SFHH':255, 'Thiers13':327}
 
-for social_structure in list(social_structures.keys())[3:4]:
+for social_structure in list(social_structures.keys())[1:2]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
     N = social_structures[social_structure]
 

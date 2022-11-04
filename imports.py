@@ -72,15 +72,14 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         broadcast = random.choice(self.get_attr(speaker, 'vocab'))
 
         test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
-
-        if self.rule == 'Unanimous':
-            agreement_possible = all([broadcast in self.get_attr(i, 'vocab') for i in edge])
-        
-
         
         if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
+                # if verbose:
+                #     print('agreement possible')
                 if test_stat:
+                    # if verbose:
+                    #     print('beta condition satisfied')
                     for j in edge:
                         if not self.get_attr(j, 'committed'): # sets all listener nodes to vocab=broadcast
                             xgi.classes.function.set_node_attributes(self, {j: {'vocab':[broadcast]}})
