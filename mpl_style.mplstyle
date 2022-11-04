@@ -5,6 +5,7 @@
 
 # Set default figure size
 figure.figsize : 8, 5.25
+axes.titlesize : xx-large
 # figure.dpi : 1000
 
 # Set x axis

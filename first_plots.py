@@ -9,30 +9,32 @@ from imports import *
 import csv
 from tqdm import tqdm
 from numpy import genfromtxt
+import matplotlib as mpl
 
 '''
 ### USE THIS TO MAKE PRETTY PICTURES, DOES NOT WORK FOR MARIUS ###
 
-
-plt.style.use(mpl_style.mplstyle)
 '''
+mpl.style.use('mpl_style.mplstyle')
+
+
+#%%
+
+prop_committed = 0.03
+beta_non_committed = 0.28
+beta_committed = 0.28
+ensemble_size = 15
+run_length = 10**5
 
 #%%
 
 # linear time axis
 
-prop_committed = 0.03
-beta_non_committed = 0.28
-beta_committed = 0.28
-ensemble_size = 50
-run_length = 10**4
-
-#%%
-social_structure = 'LyonSchool'
+social_structure = 'InVS15'
 
 fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
 
-data = genfromtxt(f'outputs/{fname}.csv', delimiter=',') #to change to pandas instead
+data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
 
 print('loaded data')
 
@@ -60,9 +62,9 @@ plt.fill_between(t, y1=B_data_25, y2=B_data_75, color='tab:orange', alpha=0.2)
 plt.plot(t, AB_data_av, color='tab:green', label='A,B')
 plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, color='tab:green', alpha=0.2)
 plt.legend(title=social_structure)
-plt.xlabel(r'Time, $t$ / number of interactions')
+plt.xlabel(r'$t$ / number of interactions')
 plt.ylabel(r'$N_{x}(t)$')
-plt.legend(title=social_structure)
+plt.legend(title=r'$x$')
 plt.savefig(f'figures/{fname}_lintime.pdf')
 plt.show()
 
@@ -76,7 +78,7 @@ AND PRESENT THOSE
 """
 
 
-social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
+social_structures = {'InVS15':217, 'LyonSchool':218, 'SFHH':255, 'Thiers13':327}
 
 for social_structure in social_structures:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
@@ -103,7 +105,7 @@ for social_structure in social_structures:
     plt.fill_between(t, y1=B_data_25, y2=B_data_75, alpha=0.2)
 
 
-    plt.xlabel('Time, $t$ / number of interactions', fontsize=16)
+    plt.xlabel('$t$ / number of interactions', fontsize=16)
     plt.ylabel(r'$n_{B+B_c}(t)$', fontsize=16)
 
 plt.legend()
@@ -141,7 +143,7 @@ for social_structure in social_structures:
     plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, alpha=0.2)
 
 
-    plt.xlabel('Time, $t$ / number of interactions', fontsize=16)
+    plt.xlabel('$t$ / number of interactions', fontsize=16)
     plt.ylabel(r'$n_{AB}(t)$', fontsize=16)
 
 plt.legend()
@@ -158,12 +160,13 @@ plt.show()
 # logarithmic time axis
 
 
-social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
+social_structures = {'InVS15':217, 'LyonSchool':218, 'SFHH':255, 'Thiers13':327}
 
-for social_structure in social_structures[1:2]:
+for social_structure in list(social_structures.keys())[3:4]:
     fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    N = social_structures[social_structure]
 
-    data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+    data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')/N
 
     print('loaded data')
 
@@ -192,9 +195,9 @@ for social_structure in social_structures[1:2]:
     plt.fill_between(t, y1=AB_data_25, y2=AB_data_75, color='tab:green', alpha=0.2)
     plt.xscale('log')
     plt.title(r'$\beta$' + f' = {beta_non_committed}')
-    plt.xlabel('Time, $t$ / number of interactions')
+    plt.xlabel('$t$ / number of interactions')
     plt.ylabel(r'$N_{x}(t)$')
-    plt.legend(title=social_structure)
+    plt.legend(title=r'$x$')
     plt.savefig(f'figures/{fname}_logtime.pdf')
     plt.show()
 

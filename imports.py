@@ -1,5 +1,4 @@
 #%%
-#hello
 
 from enum import unique
 import xgi
@@ -15,8 +14,12 @@ import os
 
 #%%
 
+# model constructor
 
-class Hypergraph(xgi.Hypergraph):
+class HigherOrderNamingGame(xgi.Hypergraph):
+    def __init__(self, rule='Unanimous', incoming_data=None, **attr):
+        xgi.Hypergraph.__init__(self, incoming_data, **attr)
+        self.rule = rule
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
         """Adds a specified selection of nodes to the hypergraph.
         The vocabularies of the nodes can be specified.
@@ -42,7 +45,7 @@ class Hypergraph(xgi.Hypergraph):
         self._edge.clear()
         self._edge_attr.clear()
 
-    def interact_and_advance(self, edge, rule='Unanimous', verbose=False):
+    def interact_and_advance(self, edge, verbose=False):
         """Function which carries out one interaction in the higher-order naming game on a hypergraph and advances to the next frame.
 
         Args:
@@ -70,13 +73,16 @@ class Hypergraph(xgi.Hypergraph):
 
         test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
 
-        if rule == 'Unanimous':
+        if self.rule == 'Unanimous':
+            agreement_possible = all([broadcast in self.get_attr(i, 'vocab') for i in edge])
+        
+
+        
+        if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
                 if test_stat:
-                    #print('AGREEMENT')
                     for j in edge:
                         if not self.get_attr(j, 'committed'): # sets all listener nodes to vocab=broadcast
-                            
                             xgi.classes.function.set_node_attributes(self, {j: {'vocab':[broadcast]}})
                             
                 else:
@@ -89,23 +95,23 @@ class Hypergraph(xgi.Hypergraph):
                         {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
         
                         
-        if rule == 'Union':
-            if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
-                 if test_stat:
-                     for i in edge:
-                         if not self.get_attr(i, 'committed'): # sets all listener nodes to vocab=broadcast
-                             xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
-                     if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
-                         xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
-                 else:
-                     for i in edge:
-                         if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
-                             self.get_attr(i, 'vocab').append(broadcast)
-            else:
-                 for i in edge:
-                     if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
-                             xgi.classes.function.set_node_attributes(self, \
-                            {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
+        # if self.rule == 'Union':
+        #     if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
+        #          if test_stat:
+        #              for i in edge:
+        #                  if not self.get_attr(i, 'committed'): # sets all listener nodes to vocab=broadcast
+        #                      xgi.classes.function.set_node_attributes(self, {i:{'vocab':[broadcast]}})
+        #              if not self.get_attr(speaker, 'committed'): # sets speaker node to vocab=broadcast
+        #                  xgi.classes.function.set_node_attributes(self, {speaker:{'vocab':[broadcast]}})
+        #          else:
+        #              for i in edge:
+        #                  if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
+        #                      self.get_attr(i, 'vocab').append(broadcast)
+        #     else:
+        #          for i in edge:
+        #              if broadcast not in self.get_attr(i, 'vocab') and not self.get_attr(i, 'committed'):
+        #                      xgi.classes.function.set_node_attributes(self, \
+        #                     {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
         
         after_dict = self.count_by_vocab_in_edge(edge)
         diff_dict = {}
@@ -119,6 +125,8 @@ class Hypergraph(xgi.Hypergraph):
             print(before_dict)
             print(after_dict)
             print(diff_dict)
+            print(list(self.nodes.attrs))
+            print()
             
         return diff_dict
 
@@ -152,26 +160,23 @@ class Hypergraph(xgi.Hypergraph):
                 count_dict['AB'] += 1
         return count_dict
 
-
-
-
-def run_naming_game(H, edges, runlength, verbose=False):
-    '''
-    Consider using only lists instead of Vocab Counts
-    '''
-    vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
-    vocab_counts['A'][0] = H.count_by_attr('vocab', ['A'], False)
-    vocab_counts['B'][0] = H.count_by_attr('vocab', ['B'], False)
-    vocab_counts['AB'][0] = H.count_by_attr('vocab', ['A', 'B'], False)+H.count_by_attr('vocab', ['B', 'A'], False)
-    #print(vocab_counts['AB'][0])
-    H.add_edges_from(edges[0])
-    random_edges = rand.choice(H.edges.members(), size = runlength)
-    for i,edge in enumerate(random_edges):
-        diff_dict = H.interact_and_advance(edge, verbose=verbose)
-        vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
-        vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
-        vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-    return vocab_counts
+    def run(self, edges, runlength, verbose=False):
+        '''
+        Consider using only lists instead of Vocab Counts
+        '''
+        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+        vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
+        vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
+        vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
+        #print(vocab_counts['AB'][0])
+        self.add_edges_from(edges[0])
+        random_edges = rand.choice(self.edges.members(), size = runlength)
+        for i,edge in enumerate(random_edges):
+            diff_dict = self.interact_and_advance(edge, verbose=verbose)
+            vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
+            vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
+            vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
+        return vocab_counts
 
 
 def get_edges_and_uniques(fname):
@@ -182,6 +187,7 @@ def get_edges_and_uniques(fname):
     edges_flat_1 = list(itertools.chain(*edges))
     edges_flat_2 = list(itertools.chain(*edges_flat_1))
     unique_id = list(set(edges_flat_2))
+    print(len(unique_id))
     return edges, unique_id
 
 
@@ -196,7 +202,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ###
     
     for k in tqdm(range(ensemble_size)):
-        H = Hypergraph()
+        H = HigherOrderNamingGame(rule='Unanimous')
 
         number_committed = round(len(unique_id)*prop_committed)
         rand.shuffle(unique_id)
@@ -210,7 +216,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
-            stats = run_naming_game(H, edges, run_length, False)
+            stats = H.run(edges, run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
