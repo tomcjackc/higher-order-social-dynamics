@@ -21,12 +21,15 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
-        """Adds a specified selection of nodes to the hypergraph.
-        The vocabularies of the nodes can be specified.
+        """Adds a set of identical naming game nodes, with defined vocabularies, levels of
+        committment, beta, and optional metadata.
 
         Args:
-            uncom_recipe (dict): Specification of uncommitted nodes to be added. Format={<number to be added, type=int>:<vocabulary, type=list}
-            com_recipe (dict): Specification of committed nodes to be added. Format={<number to be added, type=int>:<vocabulary, type=list}
+            list_nodes (list): list of node labels to be added to the hypergraph.
+            vocab (list): list representing the vocabulary shared by the added nodes.
+            committed (bool, optional): the committment status of the added nodes. Defaults to False.
+            beta (int, optional): the beta value (representing synergy/efficiency of communication/social influence) of the added nodes. Defaults to 1.
+            meta (_type_, optional): optional metadata associated with the addded nodes (eg. whether the node is a teacher or a student in a school). Defaults to None.
 
         Returns:
             None
@@ -39,23 +42,21 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         return None
     
     def clear_edges(self):
-        """Remove all edges from the graph without altering any nodes."""
+        """Remove all edges from the graph without altering any nodes. This is an alteration to the XGI code and was implemented in PR #199."""
         for node in self.nodes:
             self._node[node] = set()
         self._edge.clear()
         self._edge_attr.clear()
 
     def interact_and_advance(self, edge, verbose=False):
-        """Function which carries out one interaction in the higher-order naming game on a hypergraph and advances to the next frame.
+        """Function which carries out one interaction of the naming game on a given edge, and advances to the next frame.
 
         Args:
-            edges (list): The full, time-resolved list of edges for the hypergraph. Shape should be (number of timesteps, number of edges in each timestep, number of nodes in each edge), expected to be ragged list of lists.
-            frame_num (int): The index that determines which timestep is being considered.
-            rule (str, optional): A description of the rule used to determine whether local consensus is possible in a given interaction. Defaults to 'Unanimous'.
-            show (bool, optional): Whether or not the specifics of each interaction is shown. Useful for debugging. Defaults to False.
-        
+            edge (list): list of nodes existing on the selected edge.
+            verbose (bool, optional): whether or not the status of the interaction should be displayed. Useful for debugging, impractical for large hypergraphs. Defaults to False.
+
         Returns:
-            None
+            dict: dictionary containing the changes made to the counts of each vocabulary, used for counting efficiently.
         """
         
         
@@ -148,6 +149,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))
             
     def count_by_vocab_in_edge(self, edge):
+
         count_dict = {'A':0, 'B':0, 'AB':0}
 
         for i in edge:
@@ -160,9 +162,17 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         return count_dict
 
     def run(self, edges, runlength, verbose=False):
-        '''
-        Consider using only lists instead of Vocab Counts
-        '''
+        """runs a complete naming game on a given set of edges
+
+        Args:
+            edges (list, ndim=3): list of edges in the hypergraph. axis=0 refers to timesteps, although we don't consider time resolved data yet, so this axis should always have len=1.
+                                    Axis
+            runlength (_type_): _description_
+            verbose (bool, optional): _description_. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
@@ -189,8 +199,11 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous'):
-    edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr2_{social_structure}.json')
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3):
+    
+    ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
+    edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
+    ###
     output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
