@@ -166,12 +166,12 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
         Args:
             edges (list, ndim=3): list of edges in the hypergraph. axis=0 refers to timesteps, although we don't consider time resolved data yet, so this axis should always have len=1.
-                                    Axis
-            runlength (_type_): _description_
-            verbose (bool, optional): _description_. Defaults to False.
+                                    Axis=1 is a list of edges, axis=2 is a list of nodes in a given edge
+            runlength (int): number of interactions to compute
+            verbose (bool, optional): whether or not the status of the interaction should be displayed. Useful for debugging, impractical for large hypergraphs. Defaults to False.
 
         Returns:
-            _type_: _description_
+            dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
@@ -210,7 +210,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     if os.path.exists(f"../outputs/{output_fname}.csv"):
         os.remove(f"../outputs/{output_fname}.csv")
     ###
-    
+
     for k in tqdm(range(ensemble_size)):
         H = HigherOrderNamingGame(rule=rule)
 
