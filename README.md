@@ -18,3 +18,4 @@ Given an edge list:
 * Think about the proper long-time limit, where the absorbing state with all B is reached. We could maybe consider working out the expected length of time required to reach that state on a randomly seeded, completely connected hypergraph/simplicial complex. It would be a very large number, but we could maybe test it for very small hypergraphs.
 * Investigate the dynamics of multiple (>2) opinions existing on the network.
 * Give the nodes a social influence parameter $\beta$ that is related to their importance or centrality.
+* Try to formulate the mean-field master equation for a system with 3 opinions and implement this to check its validity.
