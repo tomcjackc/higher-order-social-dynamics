@@ -3,6 +3,7 @@
 * `HONG.py` contains the constructor class for our model, as well as functions used to conduct experiments.
 * `create-hypernetworks.py` contains the code used to reconstruct hypernetworks from sociopatterns data. outputs from this script can be found in `../data`.
 * `fig_2.ipynb` is a notebook that runs experiments and generates data required to replicate Fig. 2 from Iacopini _et al._. Plotting functions are also provided.
+* `fig_3.ipynb` is a notebook that runs experiments and generates data required to replicate Fig. 3b from Iacopini _et al._. Plotting functions are also provided.
 * `report_style.mplstyle` contains rcparams to set a default plotting style suitable for reports.
 
 ![image](../figures/allstructures_0.03_0.2759_0.2759_1000000_20_B_logtime.pdf)
