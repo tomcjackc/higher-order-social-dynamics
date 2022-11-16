@@ -17,9 +17,38 @@ import os
 # model constructor
 
 class HigherOrderNamingGame(xgi.Hypergraph):
-    def __init__(self, rule='Unanimous', incoming_data=None, **attr):
+    def __init__(self, edges, unique_id, prop_committed, beta_non_committed, beta_committed, rule='Unanimous', beta_mod_rule=None, incoming_data=None, **attr):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
+        self.beta_mod_rule = beta_mod_rule
+        self.edge_list = edges[0]
+
+        number_committed = round(len(unique_id)*prop_committed)
+        rand.shuffle(unique_id)
+
+        committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
+        
+        self.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
+        self.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
+        
+        self.add_edges_from(edges[0])
+
+        self.degree_stat = self.nodes.degree
+        self.max_degree = self.degree_stat.max()
+
+        if beta_mod_rule == 'n_simple_scale':
+            for node in unique_id:
+                beta = self.calc_beta_using_degree(node)
+                xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
+
+        # print(list(self.nodes.attrs))
+
+
+
+    def calc_beta_using_degree(self, node):
+        degree = self.degree_stat[node]
+        return degree/self.max_degree
+
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
         committment, beta, and optional metadata.
@@ -177,7 +206,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
-        self.add_edges_from(edges[0])
+        
         random_edges = rand.choice(self.edges.members(), size = runlength)
         for i,edge in enumerate(random_edges):
             diff_dict = self.interact_and_advance(edge, verbose=verbose)
@@ -199,12 +228,13 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3):
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', beta_mod_rule=None, thr=3):
     
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
-    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    output_fname = f'{social_structure}_{beta_mod_rule}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    test_fname = 'test'
     
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -212,17 +242,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ###
 
     for k in tqdm(range(ensemble_size)):
-        H = HigherOrderNamingGame(rule=rule)
-
-        number_committed = round(len(unique_id)*prop_committed)
-        rand.shuffle(unique_id)
-
-        committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
-        
-        H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
-        
-        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
-        
+        H = HigherOrderNamingGame(rule=rule, beta_mod_rule=beta_mod_rule, edges=edges, unique_id=unique_id, prop_committed=prop_committed, beta_non_committed=beta_non_committed, beta_committed=beta_committed)
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
