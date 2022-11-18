@@ -34,11 +34,19 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         self.add_edges_from(edges[0])
 
         self.degree_stat = self.nodes.degree
+        self.degree_list = self.degree_stat.aslist()
         self.max_degree = self.degree_stat.max()
+        
 
         if beta_mod_rule == 'n_simple_scale':
-            for node in unique_id:
+            self.beta_list = []
+            for node in uncommitted_nodes:
                 beta = self.calc_beta_using_degree(node)
+                self.beta_list.append(beta)
+                xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
+            for node in committed_nodes:
+                beta = self.calc_beta_using_degree(node)
+                self.beta_list.append(beta)
                 xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
 
         # print(list(self.nodes.attrs))
@@ -250,6 +258,20 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
+
+    ### This part deletes a file if it already exists
+    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
+        os.remove(f"aux_outputs/{output_fname}.csv")
+    ###
+    with open(f'aux_outputs/{output_fname}.csv', 'a') as f:
+        write = csv.writer(f)
+        print(type(H.degree_list))
+        print(type([float(H.max_degree)]))
+        print(type(H.beta_list))
+        write.writerow(H.degree_list)
+        write.writerow([float(H.max_degree)])
+        write.writerow(H.beta_list)
+
 
 
 #%%
