@@ -149,20 +149,34 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             return len(self.nodes.filterby_attr(attr, val))
             
     def count_by_vocab_in_edge(self, edge):
+        '''
+        Modify this function for 3 nodes!
 
-        count_dict = {'A':0, 'B':0, 'AB':0}
+        Parameters
+        ----------
+        edge : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        count_dict : TYPE
+            DESCRIPTION.
+
+        '''
+        count_dict = {'A':0, 'B':0, 'C':0, 'Mixed':0}
 
         for i in edge:
-            if self.get_attr(i, 'vocab') == ['A'] or self.get_attr(i, 'vocab') == ['B']:
+            if self.get_attr(i, 'vocab') == ['A'] or self.get_attr(i, 'vocab') == ['B']\
+                or self.get_attr(i, 'vocab') == ['C']:
                 
                 count_dict[self.get_attr(i, 'vocab')[0]] += 1
-            elif self.get_attr(i, 'vocab') == ['A', 'B'] or self.get_attr(i, 'vocab') == ['B', 'A']:
-                
-                count_dict['AB'] += 1
+            else:
+                count_dict['Mixed'] += 1
         return count_dict
 
     def run(self, edges, runlength, verbose=False):
         """runs a complete naming game on a given set of edges
+            Needs to be modified for 3 nodes 
 
         Args:
             edges (list, ndim=3): list of edges in the hypergraph. axis=0 refers to timesteps, although we don't consider time resolved data yet, so this axis should always have len=1.
@@ -173,17 +187,22 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         Returns:
             dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
-        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), \
+                        'C':np.zeros((runlength+1)), 'Mixed':np.zeros((runlength+1))}
+        
+        
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
-        vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
+        vocab_counts['C'][0] = self.count_by_attr('vocab', ['C'], False)
+        vocab_counts['Mixed'][0] = 0
         self.add_edges_from(edges[0])
         random_edges = rand.choice(self.edges.members(), size = runlength)
         for i,edge in enumerate(random_edges):
             diff_dict = self.interact_and_advance(edge, verbose=verbose)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
-            vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
+            vocab_counts['C'][i+1] = vocab_counts['C'][i] + diff_dict['C']
+            vocab_counts['Mixed'][i+1] = vocab_counts['Mixed'][i] + diff_dict['Mixed']
         return vocab_counts
 
 
@@ -199,12 +218,18 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3):
+def run_ensemble_experiment(prop_committed_B, prop_committed_C, beta_non_committed,\
+                            beta_committed, ensemble_size, run_length, social_structure,\
+                                rule='Unanimous', thr=3):
     
-    ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
+    ### this line can be changed depending on which threshold we would 
+    ###like to use, 2 is our data, and data relating to other values come 
+    ###from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
-    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    
+    
+    output_fname = f'{social_structure}_B={prop_committed_B}_C={prop_committed_C}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -214,22 +239,28 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     for k in tqdm(range(ensemble_size)):
         H = HigherOrderNamingGame(rule=rule)
 
-        number_committed = round(len(unique_id)*prop_committed)
+        number_committed_B = round(len(unique_id)*prop_committed_B)
+        number_committed_C = round(len(unique_id)*prop_committed_C)
         rand.shuffle(unique_id)
+        
+        committed_nodes_B, committed_nodes_C, uncommitted_nodes = np.split(np.array(unique_id), [number_committed_B, number_committed_B+number_committed_C])
+        
 
-        committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
         
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
         
-        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
+        H.add_naming_game_node(committed_nodes_B, ['B'], True, beta=beta_committed)
         
+        H.add_naming_game_node(committed_nodes_C, ['C'], True, beta=beta_committed)
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = H.run(edges, run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
-            write.writerow(stats['AB'])
+            write.writerow(stats['C'])
+            write.writerow(stats['Mixed'])
+
 
 
 #%%
