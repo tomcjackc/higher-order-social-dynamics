@@ -134,9 +134,12 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         count_dict = {'A':0, 'B':0, 'AB':0}
 
         for i in edge:
-            if self.get_attr(i, 'vocab') == ['A'] or self.get_attr(i, 'vocab') == ['B']:
+            if 'A' in self.get_attr(i, 'vocab') and not 'B' in self.get_attr(i, 'vocab'):
                 
-                count_dict[self.get_attr(i, 'vocab')[0]] += 1
+                count_dict['A'] += 1
+            elif 'B' in self.get_attr(i, 'vocab') and not 'A' in self.get_attr(i, 'vocab'):
+                
+                count_dict['B'] += 1
             else:
                 count_dict['AB'] += 1
         return count_dict
