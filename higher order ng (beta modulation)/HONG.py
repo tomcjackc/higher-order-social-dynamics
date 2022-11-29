@@ -36,26 +36,45 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         self.degree_stat = self.nodes.degree
         self.degree_list = self.degree_stat.aslist()
         self.max_degree = self.degree_stat.max()
-        
+        self.mean_degree = self.degree_stat.mean()
+        self.std_degree = self.degree_stat.std()
+        print(self.max_degree)
+        print(self.mean_degree)
+        print(self.std_degree)
 
         if beta_mod_rule == 'n_simple_scale':
             self.beta_list = []
             for node in uncommitted_nodes:
-                beta = self.calc_beta_using_degree(node)
+                beta = self.calc_beta_using_simple_scale(node)
                 self.beta_list.append(beta)
                 xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
             for node in committed_nodes:
-                beta = self.calc_beta_using_degree(node)
+                beta = self.calc_beta_using_simple_scale(node)
                 self.beta_list.append(beta)
                 xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
 
-        # print(list(self.nodes.attrs))
+        if beta_mod_rule == 'n_sigmoid':
+            self.beta_list = []
+            for node in uncommitted_nodes:
+                beta = self.calc_beta_using_sigmoid(node)
+                self.beta_list.append(beta)
+                xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
+            for node in committed_nodes:
+                beta = self.calc_beta_using_sigmoid(node)
+                self.beta_list.append(beta)
+                xgi.classes.function.set_node_attributes(self, {node: {'beta':beta}})
 
 
 
-    def calc_beta_using_degree(self, node):
+    def calc_beta_using_simple_scale(self, node):
         degree = self.degree_stat[node]
         return degree/self.max_degree
+    def calc_beta_using_sigmoid(self, node):
+        degree = self.degree_stat[node]
+        steepness = 1/self.std_degree
+        return self.trans_sigmoid(degree, self.mean_degree, steepness)
+    def trans_sigmoid(self, x, a, k):
+        return 1/(1+np.exp(-k*(x-a)))
 
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
