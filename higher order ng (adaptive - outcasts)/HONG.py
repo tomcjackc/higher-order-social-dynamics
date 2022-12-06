@@ -20,7 +20,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
     def __init__(self, rule='Unanimous', incoming_data=None, **attr):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
-    def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, meta=None):
+    def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, q=0, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
         committment, beta, and optional metadata.
 
@@ -37,7 +37,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         # label = self.num_nodes
         N = len(list_nodes)
         
-        list_dict = [{'vocab':vocab, 'committed':committed, 'beta':beta}]*N
+        list_dict = [{'vocab':vocab, 'committed':committed, 'beta':beta, 'q':q}]*N
         self.add_nodes_from(zip(list_nodes, list_dict))
         return None
     
@@ -48,7 +48,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         self._edge.clear()
         self._edge_attr.clear()
 
-    def interact_and_advance(self, edge, verbose=False):
+    def interact_and_advance(self, verbose=False):
         """Function which carries out one interaction of the naming game on a given edge, and advances to the next frame.
 
         Args:
@@ -59,8 +59,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             dict: dictionary containing the changes made to the counts of each vocabulary, used for counting efficiently.
         """
         
-        
-        edge = list(edge)
+        edges = self.edges.members()
+        edge = rand.choice(edges)
         speaker = rand.choice(edge)
         before_dict = self.count_by_vocab_in_edge(edge)
         #print(list(self.nodes.attrs), '\n')
@@ -72,13 +72,14 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         
         broadcast = random.choice(self.get_attr(speaker, 'vocab'))
 
-        test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
+        test_stat_beta = np.random.binomial(1, self.get_attr(speaker, 'beta'))
+        test_stat_q = np.random.binomial(1, self.get_attr(speaker, 'q'))
         
         if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
                 # if verbose:
                 #     print('agreement possible')
-                if test_stat:
+                if test_stat_beta:
                     # if verbose:
                     #     print('beta condition satisfied')
                     for j in edge:
@@ -88,12 +89,14 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                 else:
                     pass
             else:
-                
                 for j in edge:
                     if broadcast not in self.get_attr(j, 'vocab') and not self.get_attr(j, 'committed'):
                         ### The update below could be improved
                         xgi.classes.function.set_node_attributes(self, \
                         {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
+                if test_stat_q:
+                    #rewire
+                    pass
         
                         
         # if self.rule == 'Union':
@@ -131,6 +134,9 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             
         return diff_dict
 
+    def rewire(self, edge, speaker):
+        return
+
     def get_attr(self, node, attr):
         """Function to easily obtain a given attribute from a given node in a hypergraph.
 
@@ -162,7 +168,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                 count_dict['AB'] += 1
         return count_dict
 
-    def run(self, edges, runlength, verbose=False):
+    def run(self, runlength, verbose=False):
         """runs a complete naming game on a given set of edges
 
         Args:
@@ -178,10 +184,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
-        self.add_edges_from(edges[0])
-        random_edges = rand.choice(self.edges.members(), size = runlength)
-        for i,edge in enumerate(random_edges):
-            diff_dict = self.interact_and_advance(edge, verbose=verbose)
+        for i in range(runlength):
+            diff_dict = self.interact_and_advance(verbose=verbose)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
@@ -200,7 +204,7 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3):
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3, q_non_committed=0, q_committed=0):
     
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
@@ -213,21 +217,22 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ###
 
     for k in tqdm(range(ensemble_size)):
-        H = HigherOrderNamingGame(rule=rule)
+        H = HigherOrderNamingGame(edges=edges, rule=rule)
 
         number_committed = round(len(unique_id)*prop_committed)
         rand.shuffle(unique_id)
 
         committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
         
-        H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed)
+        H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed, q=q_non_committed)
         
-        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed)
+        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
         
+        H.add_edges_from(edges)
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
-            stats = H.run(edges, run_length, False)
+            stats = H.run(run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
