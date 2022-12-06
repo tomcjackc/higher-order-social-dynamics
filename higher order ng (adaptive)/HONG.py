@@ -88,6 +88,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                 else:
                     pass
             else:
+                
                 for j in edge:
                     if broadcast not in self.get_attr(j, 'vocab') and not self.get_attr(j, 'committed'):
                         ### The update below could be improved
