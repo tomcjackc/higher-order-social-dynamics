@@ -11,7 +11,8 @@ from tqdm import tqdm
 import csv
 import os
 
-
+def flatten(l):
+    return [item for sublist in l for item in sublist]
 #%%
 
 # model constructor
@@ -59,8 +60,9 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             dict: dictionary containing the changes made to the counts of each vocabulary, used for counting efficiently.
         """
         
-        edges = self.edges.members()
-        edge = rand.choice(edges)
+        edges = self.edges
+        edge_id = rand.choice(edges)
+        edge = list(self.edges.members(edge_id))
         speaker = rand.choice(edge)
         before_dict = self.count_by_vocab_in_edge(edge)
         #print(list(self.nodes.attrs), '\n')
@@ -74,6 +76,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
         test_stat_beta = np.random.binomial(1, self.get_attr(speaker, 'beta'))
         test_stat_q = np.random.binomial(1, self.get_attr(speaker, 'q'))
+        print(test_stat_beta)
+        print(test_stat_q)
         
         if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
@@ -85,7 +89,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                     for j in edge:
                         if not self.get_attr(j, 'committed'): # sets all listener nodes to vocab=broadcast
                             xgi.classes.function.set_node_attributes(self, {j: {'vocab':[broadcast]}})
-                            
+                            print('consensus reached')
                 else:
                     pass
             else:
@@ -95,8 +99,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                         xgi.classes.function.set_node_attributes(self, \
                         {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
                 if test_stat_q:
-                    #rewire
-                    pass
+                    self.rewire(edge_id, speaker)
+                    print('rewired')
         
                         
         # if self.rule == 'Union':
@@ -130,12 +134,26 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             print(after_dict)
             print(diff_dict)
             print(list(self.nodes.attrs))
+            print(list(self.edges.members()))
             print()
             
         return diff_dict
 
-    def rewire(self, edge, speaker):
-        return
+    def rewire(self, edge_id, speaker):
+        edge = self.edges.members(edge_id)
+        edge.remove(speaker)
+        neighbouring_edges = []
+        for node in edge:
+            neighbouring_edges.append(list(self.nodes.neighbors(node)))
+        neighbouring_edges = flatten(neighbouring_edges)
+
+        #check there is a unique neighbour to link to
+        if len(neighbouring_edges) > 0:
+            #remove the speaker from the edge
+            self.remove_node_from_edge(edge_id, speaker)
+            rand_neighbour = rand.choice(neighbouring_edges)
+            self.add_node_to_edge(edge_id, rand_neighbour)
+        return None
 
     def get_attr(self, node, attr):
         """Function to easily obtain a given attribute from a given node in a hypergraph.
@@ -237,5 +255,18 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
 
+# test code
 
+output_fname = 'test'
+edges = [[[1,2,3], [1,2], [2,3], [1,4]]]
+committed_nodes = [4]
+uncommitted_nodes = [1,2,3]
+
+H = HigherOrderNamingGame(edges=edges, rule='unianimous')
+H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
+H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
+print(edges[0])
+H.add_edges_from(edges[0])
+
+H.run(20, True)
 #%%
