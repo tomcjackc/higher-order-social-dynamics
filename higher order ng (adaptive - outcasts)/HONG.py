@@ -76,8 +76,6 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
         test_stat_beta = np.random.binomial(1, self.get_attr(speaker, 'beta'))
         test_stat_q = np.random.binomial(1, self.get_attr(speaker, 'q'))
-        print(test_stat_beta)
-        print(test_stat_q)
         
         if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
@@ -89,18 +87,19 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                     for j in edge:
                         if not self.get_attr(j, 'committed'): # sets all listener nodes to vocab=broadcast
                             xgi.classes.function.set_node_attributes(self, {j: {'vocab':[broadcast]}})
-                            print('consensus reached')
+                    # print('consensus reached')
                 else:
                     pass
             else:
                 for j in edge:
                     if broadcast not in self.get_attr(j, 'vocab') and not self.get_attr(j, 'committed'):
                         ### The update below could be improved
+                        # print('should add word to vocabs')
                         xgi.classes.function.set_node_attributes(self, \
                         {j: {'vocab': self.get_attr(j, 'vocab') + [broadcast]}})
                 if test_stat_q:
                     self.rewire(edge_id, speaker)
-                    print('rewired')
+                    # print('rewired')
         
                         
         # if self.rule == 'Union':
@@ -141,18 +140,29 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
     def rewire(self, edge_id, speaker):
         edge = self.edges.members(edge_id)
+        full_edge = edge.copy()
+        # print(edge)
         edge.remove(speaker)
         neighbouring_edges = []
         for node in edge:
             neighbouring_edges.append(list(self.nodes.neighbors(node)))
-        neighbouring_edges = flatten(neighbouring_edges)
+        neighbouring_edges = set(flatten(neighbouring_edges))
+        
+        for node in full_edge:
+            if node in neighbouring_edges:
+                neighbouring_edges.remove(node)
 
         #check there is a unique neighbour to link to
         if len(neighbouring_edges) > 0:
             #remove the speaker from the edge
+            # print('there are neighbours')
             self.remove_node_from_edge(edge_id, speaker)
-            rand_neighbour = rand.choice(neighbouring_edges)
+            rand_neighbour = rand.choice(list(neighbouring_edges))
+            # print(neighbouring_edges)
+            # print(rand_neighbour)
             self.add_node_to_edge(edge_id, rand_neighbour)
+        edge = self.edges.members(edge_id)
+        # print(edge)
         return None
 
     def get_attr(self, node, attr):
@@ -227,7 +237,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
-    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{q_non_committed}_{q_committed}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -245,8 +255,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed, q=q_non_committed)
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
-        
-        H.add_edges_from(edges)
+
+        H.add_edges_from(edges[0])
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
@@ -255,18 +265,19 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
 
+print('update4')
 # test code
 
-output_fname = 'test'
-edges = [[[1,2,3], [1,2], [2,3], [1,4]]]
-committed_nodes = [4]
-uncommitted_nodes = [1,2,3]
+# output_fname = 'test'
+# edges = [[[1,2,3], [1,2], [2,3], [1,4]]]
+# committed_nodes = [3, 4]
+# uncommitted_nodes = [1,2]
 
-H = HigherOrderNamingGame(edges=edges, rule='unianimous')
-H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
-H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
-print(edges[0])
-H.add_edges_from(edges[0])
+# H = HigherOrderNamingGame(edges=edges, rule='Unanimous')
+# H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
+# H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
+# print(edges[0])
+# H.add_edges_from(edges[0])
 
-H.run(20, True)
+# H.run(20, True)
 #%%
