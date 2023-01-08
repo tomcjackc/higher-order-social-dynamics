@@ -249,8 +249,6 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         os.remove(f"outputs/{output_fname}.csv")
     if os.path.exists(f"aux_outputs/{output_fname}.csv"):
         os.remove(f"aux_outputs/{output_fname}.csv")
-    if os.path.exists(f'vocab_dict_outputs/{output_fname}.json'):
-        os.remove(f'vocab_dict_outputs/{output_fname}.json')
     ###
 
     for k in tqdm(range(ensemble_size)):
