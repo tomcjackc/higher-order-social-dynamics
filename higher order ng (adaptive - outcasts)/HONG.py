@@ -10,6 +10,7 @@ import itertools
 from tqdm import tqdm
 import csv
 import os
+import json
 
 def flatten(l):
     return [item for sublist in l for item in sublist]
@@ -21,6 +22,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
     def __init__(self, rule='Unanimous', incoming_data=None, **attr):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
+        self.rewire_counter = 0
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, q=0, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
         committment, beta, and optional metadata.
@@ -132,7 +134,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             print(before_dict)
             print(after_dict)
             print(diff_dict)
-            print(list(self.nodes.attrs))
+            print([i[1]['vocab'] for i in list(self.nodes.attrs)])
             print(list(self.edges.members()))
             print()
             
@@ -162,6 +164,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             # print(rand_neighbour)
             self.add_node_to_edge(edge_id, rand_neighbour)
         edge = self.edges.members(edge_id)
+        self.rewire_counter += 1
         # print(edge)
         return None
 
@@ -217,7 +220,9 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-        return vocab_counts
+        final_deg = self.nodes.degree.aslist()
+        final_vocab_list = [i[1]['vocab'] for i in list(self.nodes.attrs)]
+        return vocab_counts, final_deg, final_vocab_list
 
 
 def get_edges_and_uniques(fname):
@@ -242,6 +247,10 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
         os.remove(f"outputs/{output_fname}.csv")
+    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
+        os.remove(f"aux_outputs/{output_fname}.csv")
+    if os.path.exists(f'vocab_dict_outputs/{output_fname}.json'):
+        os.remove(f'vocab_dict_outputs/{output_fname}.json')
     ###
 
     for k in tqdm(range(ensemble_size)):
@@ -255,29 +264,40 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed, q=q_non_committed)
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
-
-        H.add_edges_from(edges[0])
+        
+        H.add_edges_from(edges)
+        initial_deg = H.nodes.degree.aslist()
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
-            stats = H.run(run_length, False)
+            stats, final_deg, final_vocab_list = H.run(run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
 
-print('update4')
-# test code
+        with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
+                write = csv.writer(h)
+                write.writerow(initial_deg)
+                write.writerow([float(H.rewire_counter)])
+                write.writerow(final_deg)
+                write.writerow(final_vocab_list)
+                h.close()
+
+print('update8')
+# # test code
 
 # output_fname = 'test'
-# edges = [[[1,2,3], [1,2], [2,3], [1,4]]]
+# edges = [[1,2,3], [1,2], [2,3], [1,4]]
 # committed_nodes = [3, 4]
 # uncommitted_nodes = [1,2]
 
-# H = HigherOrderNamingGame(edges=edges, rule='Unanimous')
+# H = HigherOrderNamingGame(rule='Unanimous')
 # H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
 # H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
 # print(edges[0])
-# H.add_edges_from(edges[0])
+# H.add_edges_from(edges)
 
 # H.run(20, True)
+
+# run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**5, 'LyonSchool', q_non_committed=1, q_committed=1)
 #%%
