@@ -211,15 +211,17 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         Returns:
             dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
-        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'Singleton':np.zeros((runlength+1))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
+        vocab_counts['Singleton'][0] = self.nodes.degree.aslist().count(0)
         for i in range(runlength):
             diff_dict = self.interact_and_advance(verbose=verbose)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
+            vocab_counts['Singleton'][i+1] = self.nodes.degree.aslist().count(0)
         final_deg = self.nodes.degree.aslist()
         final_vocab_list = [i[1]['vocab'] for i in list(self.nodes.attrs)]
         return vocab_counts, final_deg, final_vocab_list
@@ -263,7 +265,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
         
-        H.add_edges_from(edges)
+        H.add_edges_from(edges[0])
         initial_deg = H.nodes.degree.aslist()
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
@@ -272,7 +274,10 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
+            write.writerow(stats['Singleton'])
 
+        print(f'number of connected components = {xgi.algorithms.connected.number_connected_components(H)}')
+        print(f'number of isolates = {len(H.nodes.isolates())}')
         with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
                 write = csv.writer(h)
                 write.writerow(initial_deg)
@@ -281,7 +286,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
                 write.writerow(final_vocab_list)
                 h.close()
 
-print('update8')
+print('update13')
 # # test code
 
 # output_fname = 'test'
