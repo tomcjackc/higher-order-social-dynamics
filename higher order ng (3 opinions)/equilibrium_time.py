@@ -30,18 +30,12 @@ def eq_time(A_data):
     count = []
     N =  A_data.shape[1]
     for A in A_data:
-<<<<<<< Updated upstream:higher order ng (3 opinions)/equilibrium_time.py
         i  = A.index(0.0)
         count.append(i)
         # for i in range(N):
         #     if A[i] == 0.0:
         #         count += [i]
-                
         #         break
-=======
-        i = A.index(0.0)
-        count.append(i)
->>>>>>> Stashed changes:higher_order_ng_3_opinions/equilibrium_time.py
     if len(count) > 0:
         return (np.mean(count), np.percentile(count, 25), np.percentile(count, 75))
     else:
