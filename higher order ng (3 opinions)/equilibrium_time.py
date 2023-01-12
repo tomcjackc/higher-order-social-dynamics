@@ -30,6 +30,7 @@ def eq_time(A_data):
     count = []
     N =  A_data.shape[1]
     for A in A_data:
+<<<<<<< Updated upstream:higher order ng (3 opinions)/equilibrium_time.py
         i  = A.index(0.0)
         count.append(i)
         # for i in range(N):
@@ -37,6 +38,10 @@ def eq_time(A_data):
         #         count += [i]
                 
         #         break
+=======
+        i = A.index(0.0)
+        count.append(i)
+>>>>>>> Stashed changes:higher_order_ng_3_opinions/equilibrium_time.py
     if len(count) > 0:
         return (np.mean(count), np.percentile(count, 25), np.percentile(count, 75))
     else:
@@ -68,7 +73,11 @@ for social_structure in social_structures:
 
 
 #%%
-dic_experiment = {'Astar':[],
+
+
+
+for social_structure in social_structures:
+    dic_experiment = {'Astar':[],
                 'Astar25': [],
                 'Astar75': [],
                 'Bstar': [],
@@ -83,9 +92,6 @@ dic_experiment = {'Astar':[],
                 'equilibrium_time25': [],
                 'equilibrium_time75': [],
                 'prop_committed':[]}
-
-
-for social_structure in social_structures:
     for f in fs:
         for beta in betas:
             beta_non_committed = beta
