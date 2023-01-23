@@ -23,6 +23,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
         self.rewire_counter = 0
+        self.figs = []
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1, q=0, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
         committment, beta, and optional metadata.
@@ -50,8 +51,27 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             self._node[node] = set()
         self._edge.clear()
         self._edge_attr.clear()
+    
+    def draw(self):
+        return None
 
-    def interact_and_advance(self, verbose=False):
+    #     a = self.nodes.attrs('vocab').aslist()
+    #     for i, n in enumerate(a):
+    #         if n == ['A']:
+    #             a[i] = 'blue'
+    #         if n == ['B']:
+    #             a[i] = 'orange'
+    #         if n == ['A', 'B'] or n == ['B', 'A']:
+    #             a[i] = 'white'
+    #     print(a)
+    #     plt.figure()
+    #     print(xgi.drawing.xgi_pylab.draw(self, node_fc = a))
+    #     plt.savefig('test.png')
+    #     plt.show()
+    #     # return fig
+            
+
+    def interact_and_advance(self, verbose=False, display=False):
         """Function which carries out one interaction of the naming game on a given edge, and advances to the next frame.
 
         Args:
@@ -68,6 +88,10 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         speaker = rand.choice(edge)
         before_dict = self.count_by_vocab_in_edge(edge)
         #print(list(self.nodes.attrs), '\n')
+
+        if display:
+            self.figs.append(self.draw)
+        # print(len(self.figs))
         
         if verbose:
             #print(f'{self.edges.members()}')
@@ -199,7 +223,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                 count_dict['AB'] += 1
         return count_dict
 
-    def run(self, runlength, verbose=False):
+    def run(self, runlength, verbose=False, display_num=None):
         """runs a complete naming game on a given set of edges
 
         Args:
@@ -211,13 +235,21 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         Returns:
             dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
+        if display_num != None:
+            frames_to_display = np.linspace(0, runlength-1, endpoint=True, num=display_num, dtype=int).tolist()
+            print(frames_to_display)
+
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'Singleton':np.zeros((runlength+1))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
         vocab_counts['Singleton'][0] = self.nodes.degree.aslist().count(0)
         for i in range(runlength):
-            diff_dict = self.interact_and_advance(verbose=verbose)
+            # if i in frames_to_display:
+            #     diff_dict = self.interact_and_advance(verbose=verbose, display=True)
+            # else:
+            #     diff_dict = self.interact_and_advance(verbose=verbose, display=False)
+            diff_dict = self.interact_and_advance(verbose=verbose, display=False)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
@@ -239,7 +271,7 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3, q_non_committed=0, q_committed=0):
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3, q_non_committed=0, q_committed=0, display_num=None):
     
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
@@ -270,12 +302,16 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
-            stats, final_deg, final_vocab_list = H.run(run_length, False)
+            stats, final_deg, final_vocab_list = H.run(run_length, False, display_num=display_num)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
             write.writerow(stats['Singleton'])
-
+        l_conn_comp = xgi.algorithms.connected.largest_connected_component(H)
+        conn_comps = xgi.algorithms.connected.connected_components(H)
+        conn_comp_sizes = [len(i) for i in conn_comps]
+        print(f'size of largest connected component = {len(l_conn_comp)}')
+        print(f'sizes of connected components = {conn_comp_sizes}')
         print(f'number of connected components = {xgi.algorithms.connected.number_connected_components(H)}')
         print(f'number of isolates = {len(H.nodes.isolates())}')
         with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
@@ -285,8 +321,13 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
                 write.writerow(final_deg)
                 write.writerow(final_vocab_list)
                 h.close()
+        
+        # for i in range(display_num):
+        #     fig = H.figs[i]
+        #     fig.savefig(f'test{i}.png')
+        
 
-print('update13')
+print('update18')
 # # test code
 
 # output_fname = 'test'
@@ -300,7 +341,7 @@ print('update13')
 # print(edges[0])
 # H.add_edges_from(edges)
 
-# H.run(20, True)
+# out = H.run(20, False, display_num=3)
 
-# run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**5, 'LyonSchool', q_non_committed=1, q_committed=1)
+# # run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**5, 'LyonSchool', q_non_committed=1, q_committed=1)
 #%%
