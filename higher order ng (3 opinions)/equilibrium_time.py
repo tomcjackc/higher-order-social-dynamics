@@ -37,7 +37,7 @@ def eq_time(A_data):
         #         count += [i]
         #         break
     if len(count) > 0:
-        return (np.mean(count), np.percentile(count, 25), np.percentile(count, 75))
+        return (np.median(count), np.mean(count), np.percentile(count, 25), np.percentile(count, 75))
     else:
         return (np.nan, np.nan, np.nan)
 
@@ -82,7 +82,7 @@ for social_structure in social_structures:
                 'Cstar75': [],
                 'beta': [],
                 'f' : [],
-                'equilibrium_time': [],
+                'equilibrium_time_avg': [],
                 'equilibrium_time25': [],
                 'equilibrium_time75': [],
                 'prop_committed':[]}
@@ -117,8 +117,8 @@ for social_structure in social_structures:
             
             
             
-            del_t, del_t25, del_t75 = eq_time(A_data)
-            dic_experiment['equilibrium_time'] += [del_t]
+            del_t_median, del_t_avg, del_t25, del_t75 = eq_time(A_data)
+            dic_experiment['equilibrium_time'] += [del_t_avg]
             dic_experiment['equilibrium_time25'] += [del_t25]
             dic_experiment['equilibrium_time75'] += [del_t75]
             
