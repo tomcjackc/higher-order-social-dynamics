@@ -236,10 +236,10 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-        final_deg = self.nodes.degree.aslist()
-        final_vocab_list = [i[1]['vocab'] for i in list(self.nodes.attrs)]
+        # final_deg = self.nodes.degree.aslist()
+        # final_vocab_list = [i[1]['vocab'] for i in list(self.nodes.attrs)]
     
-        return vocab_counts, final_deg, final_vocab_list
+        return vocab_counts #, final_deg, final_vocab_list
 
 
 def get_edges_and_uniques(fname):
@@ -259,7 +259,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
-    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{run_length}_{ensemble_size}'
+    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_q={q}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -279,21 +279,21 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q = q)
         
         H.add_edges_from(edges[0])
-        initial_deg = H.nodes.degree.aslist()
+        # initial_deg = H.nodes.degree.aslist()
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
-            stats, final_deg, final_vocab_list = H.run(edges,run_length, False)
+            stats = H.run(edges,run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
-        with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
-            write = csv.writer(h)
-            write.writerow(initial_deg)
-            write.writerow([float(H.rewire_counter)])
-            write.writerow(final_deg)
-            write.writerow(final_vocab_list)
-            h.close()
+        # with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
+        #     write = csv.writer(h)
+        #     write.writerow(initial_deg)
+        #     write.writerow([float(H.rewire_counter)])
+        #     write.writerow(final_deg)
+        #     write.writerow(final_vocab_list)
+        #     h.close()
 
 
 
