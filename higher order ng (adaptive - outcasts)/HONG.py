@@ -327,21 +327,21 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         #     fig.savefig(f'test{i}.png')
         
 
-print('update18')
+print('update19')
 # # test code
 
-# output_fname = 'test'
-# edges = [[1,2,3], [1,2], [2,3], [1,4]]
-# committed_nodes = [3, 4]
-# uncommitted_nodes = [1,2]
+output_fname = 'test'
+edges = [[1,2,3], [1,2], [2,3], [1,4]]
+committed_nodes = [3, 4]
+uncommitted_nodes = [1,2]
 
-# H = HigherOrderNamingGame(rule='Unanimous')
-# H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
-# H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
-# print(edges[0])
-# H.add_edges_from(edges)
+H = HigherOrderNamingGame(rule='Unanimous')
+H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
+H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
+print(edges[0])
+H.add_edges_from(edges)
 
-# out = H.run(20, False, display_num=3)
+out = H.run(20, True, display_num=3)
 
 # # run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**5, 'LyonSchool', q_non_committed=1, q_committed=1)
 #%%
