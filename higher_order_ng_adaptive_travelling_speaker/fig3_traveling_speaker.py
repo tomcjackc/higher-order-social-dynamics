@@ -53,7 +53,7 @@ for social_structure in social_structures:
             Bstar25_list.append(np.percentile(B_data[:, -1], 25))
             Bstar75_list.append(np.percentile(B_data[:, -1], 75))
 
-        plt.figure(1)
+        #plt.figure(1) if activated 
         plt.plot(betas, Astar_list, color='k', linestyle='--', label='A')
         plt.fill_between(betas, Astar25_list, Astar75_list, color='k', alpha=0.2)
 
