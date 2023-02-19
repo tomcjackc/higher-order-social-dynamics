@@ -20,7 +20,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
     def __init__(self, rule='Unanimous', incoming_data=None, **attr):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
-        self.rewire_counter = 0
+        
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1,q=0, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
         committment, beta, and optional metadata.
@@ -178,7 +178,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         #print(self.edges.members(new_edge_id))
         self.add_node_to_edge(new_edge_id, speaker_id)
         #print(self.edges.members(new_edge_id))
-        self.rewire_counter += 1
+        
                 
         
     
@@ -236,10 +236,9 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-        # final_deg = self.nodes.degree.aslist()
-        # final_vocab_list = [i[1]['vocab'] for i in list(self.nodes.attrs)]
+
     
-        return vocab_counts #, final_deg, final_vocab_list
+        return vocab_counts
 
 
 def get_edges_and_uniques(fname):
@@ -279,7 +278,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q = q)
         
         H.add_edges_from(edges[0])
-        # initial_deg = H.nodes.degree.aslist()
+        
+        initial_size = H.edges.size.aslist()
 
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
@@ -287,32 +287,15 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
-        # with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
-        #     write = csv.writer(h)
-        #     write.writerow(initial_deg)
-        #     write.writerow([float(H.rewire_counter)])
-        #     write.writerow(final_deg)
-        #     write.writerow(final_vocab_list)
-        #     h.close()
+            
+        final_size = H.edges.size.aslist()
+        
+        with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
+            write = csv.writer(h)
+            write.writerow(initial_size)
+            write.writerow(final_size)
+            h.close()
 
-
-
-# test code
-
-# output_fname = 'test'
-# edges = [[1,2,3], [1,2], [2,3], [1,4]]
-# committed_nodes = [3, 4]
-# uncommitted_nodes = [1,2]
-
-# H = HigherOrderNamingGame(rule='Unanimous')
-# H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
-# H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
-# print(edges[0])
-# H.add_edges_from(edges)
-
-# H.run(20, True)
-
-# run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**2, 'LyonSchool', q_non_committed=1, q_committed=1)
 
 
 
