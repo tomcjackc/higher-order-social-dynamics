@@ -4,11 +4,17 @@ import scipy as sp
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import poisson
+from scipy.stats import binom
 
 class system():
-    def __init__(self, N, beta, f_A_init, f_B_init, f_Bcom_init, gamma, t_max):
+    def __init__(self, N, beta, f_A_init, f_B_init, f_Bcom_init, gamma, t_max, q):
+        self.t = 0
         self.gamma = gamma
+        self.q = q
         self.N = N
+        self.possible_n = np.linspace(0, N, num=N+1, endpoint=True, dtype=int)
+        self.pi_n_init = self.pi(self.possible_n)
+        self.pi_n = self.pi_n_init # this pi_n gets updated at each time step and forms the basis of the custom probability distribution in the pi function
         self.beta = beta
         self.f_A_init = f_A_init
         self.f_B_init = f_B_init
@@ -21,7 +27,7 @@ class system():
         self.f_Bcom = [f_Bcom_init]
 
         self.t_max = t_max
-        self.t = 0
+        
 
     def magnetisation(self):
         return self.f_A-self.f_B-self.f_Bcom
@@ -30,11 +36,19 @@ class system():
         return n/self.N
 
     def pi(self, n, dist='poisson'):
-        if dist == 'poisson':
-            return poisson.pmf(n, self.gamma)
-        if dist == 'exponential':
-            return (1/self.gamma)*np.e**((-n-2)/self.gamma)
-    
+        if self.t == 0:
+            if dist == 'poisson':
+                return poisson.pmf(n, self.gamma)
+            if dist == 'exponential':
+                return (1/self.gamma)*np.e**((-n-2)/self.gamma)
+            if dist == 'binomial':
+                p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
+                return binom.pmf(n, self.N, p)
+        else:
+            return self.pi_n[n]
+
+
+    # opinion dynamics
     def w_BAB(self):
         sum = 0
         for n in range(2, self.N):
@@ -103,6 +117,34 @@ class system():
         df_B = self.w_BAB()*self.f_AB[-1]-self.w_ABB()*self.f_B[-1]
         return df_B
     
+    #structural dynamics
+    def dpi_n_dt(self, n):
+        # n is a list/array in this function
+        dpi_n_dt = self.w_nnm1(n)*self.pi(n-1)+self.w_nnp1(n)*self.pi(n+1)-self.w_nm1n(n)*self.pi(n)-self.np1n(n)*self.pi(n)
+        return dpi_n_dt
+    
+    def dpi_0_dt(self):
+        dpi_0_dt = self.w_nnp1(0)*self.pi(1)-self.w_nm1n(0)*self.pi(0)-self.np1n(0)*self.pi(0)
+        return dpi_0_dt
+    
+    def dpi_N_dt(self):
+        # n is a scalar in this function
+        dpi_N_dt = self.w_nnm1(self.N)*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N)-self.np1n(self.N)*self.pi(self.N)
+        return dpi_N_dt
+    
+    def w_nnm1(self, n):
+        return
+    
+    def w_nnp1(self, n):
+        return
+
+    def w_nm1n(self, n):
+        return
+    
+    def w_np1n(self, n):
+        return
+    
+    # integrating functions
     def int_1step(self):
         self.f_A.append(self.f_A[-1]+self.df_A())
         self.f_B.append(self.f_B[-1]+self.df_B())
@@ -117,12 +159,18 @@ class system():
     
     def scipy_integrate(self):
         def func(f, t):
-            #print(t)
-            self.t = int(t)
+            # print(t)
+            self.t = t
             f_A = f[0]
             f_B = f[1]
             f_Bcom = self.f_Bcom_init
             f_AB = 1-f_A-f_B-f_Bcom
+
+
+            # these lines mean we have to use systems with >4 nodes (which we will anyway but this restricts it)
+            pi_0 = f[2]
+            pi_n = f[3:-1]
+            pi_N = f[-1]
 
             #print(int(t))
             self.f_A.append(f_A)
@@ -133,9 +181,13 @@ class system():
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
 
-            return [df_A_dt, df_B_dt]
+            dpi_0_dt = self.dpi_0_dt()
+            dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
+            dpi_N_dt = self.dpi_N_dt()
+
+            return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
-        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
+        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
         self.scipy_f_A = res[:, 0]
         self.scipy_f_B = res[:, 1]
         self.scipy_f_Bcom = np.full_like(res[:, 0], self.f_Bcom_init)
@@ -161,8 +213,8 @@ notes so far:
 
 '''
 
-sys = system(N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.67, t_max=10**5)
-sys.scipy_integrate()
+sys = system(N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.67, t_max=10**2, q=1)
+# sys.scipy_integrate()
 
 # plt.figure()
 # plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
@@ -172,20 +224,20 @@ sys.scipy_integrate()
 # plt.plot(sys.f_Bcom, label='f_Bcom')
 # plt.legend()
 
-plt.figure(1)
-plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.scipy_f_A, label='f_A')
-plt.plot(sys.scipy_f_B, label='f_B')
-plt.plot(sys.scipy_f_AB, label='f_AB')
-plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
-plt.xscale('log')
-plt.legend()
+# plt.figure(1)
+# plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_f_A, label='f_A')
+# plt.plot(sys.scipy_f_B, label='f_B')
+# plt.plot(sys.scipy_f_AB, label='f_AB')
+# plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
+# plt.xscale('log')
+# plt.legend()
 
-plt.figure(2)
-#plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.scipy_M, label='Magnetisation')
-plt.xscale('log')
-plt.ylim((-1,1))
-plt.legend()
+# plt.figure(2)
+# #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_M, label='Magnetisation')
+# plt.xscale('log')
+# plt.ylim((-1,1))
+# plt.legend()
 
 #%%
