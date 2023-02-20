@@ -39,11 +39,13 @@ class system():
         self.t = 0
         self.gamma = gamma
         self.q = q
-        self.N = N
+        
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
+        else:
+            self.N = N
         self.possible_n = np.linspace(1, N, num=N, endpoint=True, dtype=int)
         self.trunc_possible_n = self.possible_n[1:-1]
         self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
@@ -81,26 +83,35 @@ class system():
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                
                 dict_edges = count_lists(edges[0])
-                dict_edges.get(n, 0)
-                return dict_edges.get(n, 0)
+                if type(n) == type(np.array([])):
+                    return np.array([dict_edges.get(j, 0) for j in n])
+                else:
+                    return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 
                 dict_edges = count_lists(edges[0])
-                dict_edges.get(n, 0)
-                return dict_edges.get(n, 0)
+                if type(n) == type(np.array([])):
+                    return np.array([dict_edges.get(j, 0) for j in n])
+                else:
+                    return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 
                 dict_edges = count_lists(edges[0])
-                dict_edges.get(n, 0)
-                return dict_edges.get(n, 0)
+                if type(n) == type(np.array([])):
+                    return np.array([dict_edges.get(j, 0) for j in n])
+                else:
+                    return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                
                 dict_edges = count_lists(edges[0])
-                # dict_edges.get(n, 0)
-                return dict_edges.get(n, 0)
+                
+                if type(n) == type(np.array([])):
+                    return np.array([dict_edges.get(j, 0) for j in n])
+                else:
+                    return dict_edges.get(n, 0)
             if self.dist == 'uniform':
                 if n == self.gamma: #here we assume that all edges are of size gamma
                     return 1
@@ -290,7 +301,7 @@ notes so far:
     whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
 '''
 #%%
-sys = system(N=213, beta=0.27, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=12, t_max=10**5, q=0, dist='binomial')
+sys = system(N=326, beta=0.4, f_A_init=0.90, f_B_init=0, f_Bcom_init=0.10, gamma=1, t_max=10**5, q=0, dist='Thiers13')
 sys.scipy_integrate()
 
 # plt.figure()

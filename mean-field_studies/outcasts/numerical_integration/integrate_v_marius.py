@@ -39,14 +39,19 @@ class system():
         self.f_B_init = f_B_init
         self.f_AB_init = 1-f_A_init-f_B_init-f_Bcom_init
         self.f_Bcom_init = f_Bcom_init
-
+        self.dist = dist
+        
+        
+        
         self.f_A = [f_A_init]
         self.f_B = [f_B_init]
         self.f_AB = [self.f_AB_init]
         self.f_Bcom = [f_Bcom_init]
-        self.dist = dist
+        
         self.t_max = t_max
         self.t = 0
+        self.possible_n = np.linspace(1, N, num=N, endpoint=True, dtype=int)
+        self.pi_n = np.array([self.pi(n) for n in self.possible_n])
 
     def magnetisation(self):
         return self.f_A-self.f_B-self.f_Bcom
@@ -56,41 +61,45 @@ class system():
 
     def pi(self, n):
         dist = self.dist
-        if dist == 'poisson':
-            return poisson.pmf(n-1, self.gamma)
-        if dist == 'exponential':
-            return (1/self.gamma)*np.e**((-n-2)/self.gamma)
-        if dist == 'Thiers13':
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
-           
-            dict_edges = count_lists(edges[0])
-            dict_edges.get(n, 0)
-            return dict_edges.get(n, 0)
-        if dist == 'SFHH':
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+        if self.t == 0:
+            if dist == 'poisson':
+                return poisson.pmf(n-1, self.gamma)
+            if dist == 'exponential':
+                return (1/self.gamma)*np.e**((-n-2)/self.gamma)
+            if dist == 'Thiers13':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+               
+                dict_edges = count_lists(edges[0])
+                dict_edges.get(n, 0)
+                return dict_edges.get(n, 0)
+            if dist == 'SFHH':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+                
+                dict_edges = count_lists(edges[0])
+                dict_edges.get(n, 0)
+                return dict_edges.get(n, 0)
+            if dist == 'LyonSchool':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+                
+                dict_edges = count_lists(edges[0])
+                dict_edges.get(n, 0)
+                return dict_edges.get(n, 0)
+            if dist == 'InVS15':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+               
+                dict_edges = count_lists(edges[0])
+                dict_edges.get(n, 0)
+                return dict_edges.get(n, 0)
+            if dist == 'binomial':
+                return 
+            if dist == 'uniform':
+                if n == self.gamma:
+                    return 1
+                else:
+                    return 0
+        else:
+            return self.pi_n[n-1]
             
-            dict_edges = count_lists(edges[0])
-            dict_edges.get(n, 0)
-            return dict_edges.get(n, 0)
-        if dist == 'LyonSchool':
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
-            
-            dict_edges = count_lists(edges[0])
-            dict_edges.get(n, 0)
-            return dict_edges.get(n, 0)
-        if dist == 'InVS15':
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
-           
-            dict_edges = count_lists(edges[0])
-            dict_edges.get(n, 0)
-            return dict_edges.get(n, 0)
-        if dist == 'binomial':
-            return 
-        if dist == 'uniform':
-            if n == self.gamma:
-                return 1
-            else:
-                return 0
             
     
     def w_BAB(self):
