@@ -35,18 +35,20 @@ def get_edges_and_uniques(fname):
 
 
 class system():
-    def __init__(self, N, beta, f_A_init, f_B_init, f_Bcom_init, gamma, dist, t_max, q):
+    def __init__(self, dist, beta, f_A_init, f_B_init, f_Bcom_init, t_max, q):
         self.t = 0
-        self.gamma = gamma
+
         self.q = q
         
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
-        else:
-            self.N = N
-        self.possible_n = np.linspace(1, N, num=N, endpoint=True, dtype=int)
+        elif type(self.dist) == list:
+            self.dist = self.dist[0]
+            self.N = self.dist[1]
+            self.gamma = self.dist[2]
+        self.possible_n = np.linspace(1, self.N, num=self.N, endpoint=True, dtype=int)
         self.trunc_possible_n = self.possible_n[1:-1]
         self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
         self.pi_n = self.pi_n_init # this pi_n gets updated at each time step and forms the basis of the custom probability distribution in the pi function
@@ -301,7 +303,9 @@ notes so far:
     whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
 '''
 #%%
-sys = system(N=326, beta=0.4, f_A_init=0.90, f_B_init=0, f_Bcom_init=0.10, gamma=1, t_max=10**5, q=0, dist='Thiers13')
+
+p = 0.11
+sys = system(dist='Thiers13', beta=0.2759, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=0, )
 sys.scipy_integrate()
 
 # plt.figure()
@@ -313,13 +317,13 @@ sys.scipy_integrate()
 # plt.legend()
 
 plt.figure(1)
-plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.scipy_f_A, label='f_A')
-plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
-plt.plot(sys.scipy_f_AB, label='f_AB')
+plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
+plt.plot(sys.scipy_f_A, label='f_{A}')
+plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_{B}')
+plt.plot(sys.scipy_f_AB, label='f_{AB}')
 # plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
 plt.xscale('log')
-plt.legend()
+plt.legend(title = sys.dist)
 
 plt.figure(2)
 #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')

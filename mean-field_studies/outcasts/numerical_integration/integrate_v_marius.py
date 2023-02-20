@@ -40,14 +40,10 @@ class system():
         self.f_AB_init = 1-f_A_init-f_B_init-f_Bcom_init
         self.f_Bcom_init = f_Bcom_init
         self.dist = dist
-        
-        
-        
         self.f_A = [f_A_init]
         self.f_B = [f_B_init]
         self.f_AB = [self.f_AB_init]
         self.f_Bcom = [f_Bcom_init]
-        
         self.t_max = t_max
         self.t = 0
         self.possible_n = np.linspace(1, N, num=N, endpoint=True, dtype=int)
@@ -231,7 +227,7 @@ notes so far:
 
 p=0.06
 
-sys = system(N=213, beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, gamma=8, dist = 'InVS15', t_max=10**5)
+sys = system(N=213, beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, gamma=8, dist = 'InVS15', t_max=10**6)
 sys.scipy_integrate()
 
 # plt.figure()
@@ -255,6 +251,7 @@ plt.show()
 #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
 plt.plot(sys.scipy_M, label='Magnetisation')
 plt.xscale('log')
+plt.ylim((-1,1))
 plt.ylim((-1,1))
 plt.legend()
 plt.show()
