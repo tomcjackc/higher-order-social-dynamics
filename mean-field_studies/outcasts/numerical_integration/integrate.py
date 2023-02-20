@@ -205,29 +205,50 @@ class system():
     #structural dynamics
     def dpi_n_dt(self):
         # n is a list/array in this function
-        dpi_n_dt = self.w_nnm1(self.trunc_possible_n)*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)
+        dpi_n_dt = self.w_nnm1()*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n()*self.pi(self.trunc_possible_n)
         return dpi_n_dt
     
     def dpi_1_dt(self):
-        dpi_1_dt = self.w_nnp1(1)*self.pi(2)-self.w_np1n(2)*self.pi(1)
+        dpi_1_dt = self.w_nnp1(1)*self.pi(2)-self.w_np1n()*self.pi(1)
         return dpi_1_dt
     
     def dpi_N_dt(self):
         # n is a scalar in this function
-        dpi_N_dt = self.w_nnm1(self.N)*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N)
+        dpi_N_dt = self.w_nnm1()*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N)
         return dpi_N_dt
     
-    def w_nnm1(self, n):
-        return 0
+    def P_no_consensus(self, n):
+        P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
+            (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))-\
+            self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
+            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)) - \
+            self.AB_consensus_poss(n,k=0)*(1+\
+            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)+\
+            (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))
+        return P
+    
+    def w_nnm1(self):
+        sum = 0
+        for j in range(1, self.N+1):
+            sum += self.pi(j)*self.P_no_consensus(j)
+        return sum*self.q
     
     def w_nnp1(self, n):
-        return 0
-
+        if type(n)==type(np.array([])):
+            return self.pi(n)*np.array([self.P_no_consensus(j) for j in n])*self.q
+        else:
+            return self.pi(n)*self.P_no_consensus(n)*self.q
     def w_nm1n(self, n):
-        return 0
+        if type(n)==type(np.array([])):
+            return self.pi(n)*np.array([self.P_no_consensus(j) for j in n])*self.q
+        else:
+            return self.pi(n)*self.P_no_consensus(n)*self.q
     
-    def w_np1n(self, n):
-        return 0
+    def w_np1n(self):
+        sum = 0
+        for j in range(1, self.N+1):
+            sum += self.pi(j)*self.P_no_consensus(j)
+        return sum*self.q
     
     # integrating functions
     def int_1step(self):
@@ -305,7 +326,7 @@ notes so far:
 #%%
 
 p = 0.11
-sys = system(dist='Thiers13', beta=0.2759, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=0, )
+sys = system(dist='Thiers13', beta=0.2759, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=1)
 sys.scipy_integrate()
 
 # plt.figure()
@@ -318,9 +339,9 @@ sys.scipy_integrate()
 
 plt.figure(1)
 plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
-plt.plot(sys.scipy_f_A, label='f_{A}')
-plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_{B}')
-plt.plot(sys.scipy_f_AB, label='f_{AB}')
+plt.plot(sys.scipy_f_A, label='f_A')
+plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
+plt.plot(sys.scipy_f_AB, label='f_AB')
 # plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
 plt.xscale('log')
 plt.legend(title = sys.dist)
