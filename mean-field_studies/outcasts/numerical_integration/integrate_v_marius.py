@@ -57,7 +57,7 @@ class system():
     def pi(self, n):
         dist = self.dist
         if dist == 'poisson':
-            return poisson.pmf(n-2, self.gamma)
+            return poisson.pmf(n-1, self.gamma)
         if dist == 'exponential':
             return (1/self.gamma)*np.e**((-n-2)/self.gamma)
         if dist == 'Thiers13':
@@ -95,29 +95,29 @@ class system():
     
     def w_BAB(self):
         sum = 0
-        for n in range(2, self.N):
+        for n in range(1, self.N+1):
             sum += self.g(n)*self.pi(n)*self.w_BAB_n(n)
         return sum
     
     def w_AAB(self):
         sum = 0
-        for n in range(2, self.N):
+        for n in range(1, self.N+1):
             sum += self.g(n)*self.pi(n)*self.w_AAB_n(n)
         return sum
     
     def w_ABA(self):
         sum = 0
-        for n in range(2, self.N):
+        for n in range(1, self.N+1):
             sum += self.g(n)*self.pi(n)*self.w_ABA_n(n)
         return sum
     
     def w_ABB(self):
         sum = 0
-        for n in range(2, self.N):
+        for n in range(1, self.N+1):
             sum += self.g(n)*self.pi(n)*self.w_ABB_n(n)
         return sum
 
-    def w_BAB_n(self, n):
+    def w_BAB_n(self, n): # all of those type of func need to be corrected
         return self.beta*self.speaker_says_B_given_B_con_poss()*self.B_consensus_poss(n)
     
     def w_AAB_n(self, n):
@@ -220,34 +220,34 @@ notes so far:
 '''
 #%%
 
-for p in [0.04, 0.05]:
+p=0.06
 
-    sys = system(N=213, beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, gamma=8, dist = 'InVS15', t_max=10**5)
-    sys.scipy_integrate()
-    
-    # plt.figure()
-    # plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-    # plt.plot(sys.f_A, label='f_A')
-    # plt.plot(sys.f_B, label='f_B')
-    # plt.plot(sys.f_AB, label='f_AB')
-    # plt.plot(sys.f_Bcom, label='f_Bcom')
-    # plt.legend()
-    
-    
-    plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-    plt.plot(sys.scipy_f_A, label='f_A')
-    plt.plot(sys.scipy_f_B + sys.scipy_f_Bcom, label='f_B')
-    plt.plot(sys.scipy_f_AB, label='f_AB')
-    #plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
-    plt.xscale('log')
-    plt.legend()
-    plt.show()
-    
-    #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-    plt.plot(sys.scipy_M, label='Magnetisation')
-    plt.xscale('log')
-    plt.ylim((-1,1))
-    plt.legend()
-    plt.show()
+sys = system(N=213, beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, gamma=8, dist = 'InVS15', t_max=10**5)
+sys.scipy_integrate()
+
+# plt.figure()
+# plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.f_A, label='f_A')
+# plt.plot(sys.f_B, label='f_B')
+# plt.plot(sys.f_AB, label='f_AB')
+# plt.plot(sys.f_Bcom, label='f_Bcom')
+# plt.legend()
+
+
+plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+plt.plot(sys.scipy_f_A, label='f_A')
+plt.plot(sys.scipy_f_B + sys.scipy_f_Bcom, label='f_B')
+plt.plot(sys.scipy_f_AB, label='f_AB')
+#plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
+plt.xscale('log')
+plt.legend()
+plt.show()
+
+#plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+plt.plot(sys.scipy_M, label='Magnetisation')
+plt.xscale('log')
+plt.ylim((-1,1))
+plt.legend()
+plt.show()
 
 #%%
