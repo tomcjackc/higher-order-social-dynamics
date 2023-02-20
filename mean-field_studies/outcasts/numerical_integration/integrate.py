@@ -40,10 +40,12 @@ class system():
         self.gamma = gamma
         self.q = q
         self.N = N
-        if dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
+        self.dist = dist
+        if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         self.possible_n = np.linspace(1, N, num=N, endpoint=True, dtype=int)
+        self.trunc_possible_n = self.possible_n[1:-1]
         self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
         self.pi_n = self.pi_n_init # this pi_n gets updated at each time step and forms the basis of the custom probability distribution in the pi function
         self.beta = beta
@@ -67,40 +69,39 @@ class system():
         return n/self.N
 
     def pi(self, n):
-        dist =self.dist
         if self.t == 0:
-            if dist == 'poisson':
+            if self.dist == 'poisson':
                 return poisson.pmf(n-1, self.gamma)
-            if dist == 'exponential':
+            if self.dist == 'exponential':
                 return (1/self.gamma)*np.e**((-n-2)/self.gamma)
-            if dist == 'binomial':
+            if self.dist == 'binomial':
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N, p)
-            if dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            if self.dist == 'Thiers13':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                
                 dict_edges = count_lists(edges[0])
                 dict_edges.get(n, 0)
                 return dict_edges.get(n, 0)
-            if dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            if self.dist == 'SFHH':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 
                 dict_edges = count_lists(edges[0])
                 dict_edges.get(n, 0)
                 return dict_edges.get(n, 0)
-            if dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            if self.dist == 'LyonSchool':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 
                 dict_edges = count_lists(edges[0])
                 dict_edges.get(n, 0)
                 return dict_edges.get(n, 0)
-            if dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            if self.dist == 'InVS15':
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                
                 dict_edges = count_lists(edges[0])
-                dict_edges.get(n, 0)
+                # dict_edges.get(n, 0)
                 return dict_edges.get(n, 0)
-            if dist == 'uniform':
+            if self.dist == 'uniform':
                 if n == self.gamma: #here we assume that all edges are of size gamma
                     return 1
                 else:
@@ -135,46 +136,50 @@ class system():
         return sum
 
     def w_BAB_n(self, n):# all of those type of func need to be corrected
-        return self.beta*self.speaker_says_B_given_B_con_poss()*self.B_consensus_poss(n,k=1)
+        return self.beta*self.speaker_says_B_given_B_con_poss_lookingatAB(n)*self.B_consensus_poss_lookingatAB(n,k=1)
     
     def w_AAB_n(self, n):
-        return self.beta*self.speaker_says_A_given_A_con_poss()*self.A_consensus_poss(n, k=1)
+        return self.beta*self.speaker_says_A_given_A_con_poss_lookingatAB(n)*self.A_consensus_poss_lookingatAB(n, k=1)
     
     def w_ABA_n(self, n):
-        return self.beta*self.speaker_says_B_given_B_con_not_possible()*(1-self.B_consensus_poss(n, k=1))
+        return self.beta*self.speaker_says_B_given_B_con_not_possible_lookingatA(n)
     
     def w_ABB_n(self, n):
-        return self.beta*self.speaker_says_A_given_A_con_not_possible()*(1-self.A_consensus_poss(n, k=1))
+        return self.beta*self.speaker_says_A_given_A_con_not_possible_lookingatB(n)
 
-    def B_consensus_poss(self, n, k = 0):
+    def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k, n): # this should do the product up to and including the i=n-1 term
             mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))
         return mult
 
-    def A_consensus_poss(self, n, k = 0):
+    def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
             mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))
         return mult
     
-    def AB_consensus_poss(self, n, k = 0):
+    def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
             mult = mult*(self.f_AB[-1]-(i/self.N))
         return mult
     
-    def speaker_says_B_given_B_con_poss(self, n):
-        return ((self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))
+    def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
+        term1 = 1/(2*n)
+        term2 = ((n-1)/n)*((self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))
+        return term1+term2
     
-    def speaker_says_A_given_A_con_poss(self, n):
-        return ((self.f_A[-1]+0.5*self.f_AB[-1])/(self.f_A[-1]+self.f_AB[-1]))
+    def speaker_says_A_given_A_con_poss_lookingatAB(self, n):
+        term1 = 1/(2*n)
+        term2 = ((n-1)/n)*((self.f_A[-1]+0.5*self.f_AB[-1])/(self.f_A[-1]+self.f_AB[-1]))
+        return term1+term2
     
-    def speaker_says_B_given_B_con_not_possible(self, n):
-        return (self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])
+    def speaker_says_B_given_B_con_not_possible_lookingatA(self, n):
+        return ((n-1)/n)*(self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])
 
-    def speaker_says_A_given_A_con_not_possible(self, n):
-        return (self.f_A[-1]+0.5*self.f_AB[-1])
+    def speaker_says_A_given_A_con_not_possible_lookingatB(self, n):
+        return ((n-1)/n)*(self.f_A[-1]+0.5*self.f_AB[-1])
 
     def df_A(self):
         df_A = self.w_AAB()*self.f_AB[-1]-self.w_ABA()*self.f_A[-1]
@@ -185,14 +190,14 @@ class system():
         return df_B
     
     #structural dynamics
-    def dpi_n_dt(self, n):
+    def dpi_n_dt(self):
         # n is a list/array in this function
-        dpi_n_dt = self.w_nnm1(n)*self.pi(n-1)+self.w_nnp1(n)*self.pi(n+1)-self.w_nm1n(n)*self.pi(n)-self.np1n(n)*self.pi(n)
+        dpi_n_dt = self.w_nnm1(self.trunc_possible_n)*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)
         return dpi_n_dt
     
     def dpi_1_dt(self):
-        dpi_0_dt = self.w_nnp1(1)*self.pi(2)-self.np1n(2)*self.pi(1)
-        return dpi_0_dt
+        dpi_1_dt = self.w_nnp1(1)*self.pi(2)-self.w_np1n(2)*self.pi(1)
+        return dpi_1_dt
     
     def dpi_N_dt(self):
         # n is a scalar in this function
@@ -200,17 +205,16 @@ class system():
         return dpi_N_dt
     
     def w_nnm1(self, n):
-        w_nnm1 = 
-        return
+        return 0
     
     def w_nnp1(self, n):
-        return
+        return 0
 
     def w_nm1n(self, n):
-        return
+        return 0
     
     def w_np1n(self, n):
-        return
+        return 0
     
     # integrating functions
     def int_1step(self):
@@ -249,7 +253,7 @@ class system():
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
 
-            dpi_0_dt = self.dpi_0_dt()
+            dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
 
@@ -279,25 +283,30 @@ notes so far:
     also N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.7, t_max=10**5
     and N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.67, t_max=10**5
 
+- using the new code (which just includes small correction terms as discussed), the critical point seems to have moved.
+    new interesting parameters:
+        N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.9, t_max=10**5, q=0, dist='binomial'
+        N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.7, t_max=10**5, q=0, dist='poisson'
+    whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
 '''
 #%%
-sys = system(N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.67, t_max=10**5, q=0)
+sys = system(N=213, beta=0.27, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=12, t_max=10**5, q=0, dist='binomial')
 sys.scipy_integrate()
 
-plt.figure()
-plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.f_A, label='f_A')
-plt.plot(sys.f_B, label='f_B')
-plt.plot(sys.f_AB, label='f_AB')
-plt.plot(sys.f_Bcom, label='f_Bcom')
-plt.legend()
+# plt.figure()
+# plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.f_A, label='f_A')
+# plt.plot(sys.f_B, label='f_B')
+# plt.plot(sys.f_AB, label='f_AB')
+# plt.plot(sys.f_Bcom, label='f_Bcom')
+# plt.legend()
 
 plt.figure(1)
 plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
 plt.plot(sys.scipy_f_A, label='f_A')
-plt.plot(sys.scipy_f_B, label='f_B')
+plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
 plt.plot(sys.scipy_f_AB, label='f_AB')
-plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
+# plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
 plt.xscale('log')
 plt.legend()
 
