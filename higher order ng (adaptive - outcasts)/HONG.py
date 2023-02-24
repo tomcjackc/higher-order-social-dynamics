@@ -11,6 +11,10 @@ from tqdm import tqdm
 import csv
 import os
 import json
+import logging
+import threading
+import time
+import multiprocessing
 
 def flatten(l):
     return [item for sublist in l for item in sublist]
@@ -274,6 +278,7 @@ def get_edges_and_uniques(fname):
 def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3, q_non_committed=0, q_committed=0, display_num=None):
     
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
+    global edges, unique_id
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
     output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{q_non_committed}_{q_committed}_{run_length}_{ensemble_size}'
@@ -285,63 +290,88 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         os.remove(f"aux_outputs/{output_fname}.csv")
     ###
 
-    for k in tqdm(range(ensemble_size)):
-        H = HigherOrderNamingGame(edges=edges, rule=rule)
+    ######## thread library
+    # threads = []
+    # for i in tqdm(range(ensemble_size)):
+    #     print("Main    : create and start thread %d.", i)
+    #     x = threading.Thread(target=run_and_save_one_experiment, args=(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule, thr, q_non_committed, q_committed, display_num), daemon=True)
+    #     threads.append(x)
+    #     x.start()
+    # for i, thread in enumerate(threads):
+    #     print("Main    : before joining thread %d.", i)
+    #     thread.join()
+    #     print("Main    : thread %d done", i)
 
-        number_committed = round(len(unique_id)*prop_committed)
-        rand.shuffle(unique_id)
+    ######### just a for loop
+    for i in range(ensemble_size):
+        run_and_save_one_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule='Unanimous', thr=3, q_non_committed=q_non_committed, q_committed=q_committed, display_num=None)
 
-        committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
-        
-        H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed, q=q_non_committed)
-        
-        H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
-        
-        H.add_edges_from(edges[0])
-        initial_deg = H.nodes.degree.aslist()
+    ######### multiprocessing
+    # args = [(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule, thr, q_non_committed, q_committed, display_num)]*ensemble_size
+    # with multiprocessing.Pool() as pool:
+    #     # Use the pool to map the function to the arguments
+    #     pool.starmap(run_and_save_one_experiment, args)
 
-        with open(f'outputs/{output_fname}.csv', 'a') as f:
-            write = csv.writer(f)
-            stats, final_deg, final_vocab_list = H.run(run_length, False, display_num=display_num)
-            write.writerow(stats['A'])
-            write.writerow(stats['B'])
-            write.writerow(stats['AB'])
-            write.writerow(stats['Singleton'])
-        l_conn_comp = xgi.algorithms.connected.largest_connected_component(H)
-        conn_comps = xgi.algorithms.connected.connected_components(H)
-        conn_comp_sizes = [len(i) for i in conn_comps]
-        print(f'size of largest connected component = {len(l_conn_comp)}')
-        print(f'sizes of connected components = {conn_comp_sizes}')
-        print(f'number of connected components = {xgi.algorithms.connected.number_connected_components(H)}')
-        print(f'number of isolates = {len(H.nodes.isolates())}')
-        with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
-                write = csv.writer(h)
-                write.writerow(initial_deg)
-                write.writerow([float(H.rewire_counter)])
-                write.writerow(final_deg)
-                write.writerow(final_vocab_list)
-                h.close()
-        
-        # for i in range(display_num):
-        #     fig = H.figs[i]
-        #     fig.savefig(f'test{i}.png')
+
+def run_and_save_one_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, rule, thr, q_non_committed, q_committed, display_num):
+    output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_{q_non_committed}_{q_committed}_{run_length}_{ensemble_size}'
+
+    H = HigherOrderNamingGame(edges=edges, rule=rule)
+
+    number_committed = round(len(unique_id)*prop_committed)
+    rand.shuffle(unique_id)
+
+    committed_nodes, uncommitted_nodes = np.split(np.array(unique_id), [number_committed])
+    
+    H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=beta_non_committed, q=q_non_committed)
+    
+    H.add_naming_game_node(committed_nodes, ['B'], True, beta=beta_committed, q=q_committed)
+    
+    H.add_edges_from(edges[0])
+    initial_deg = H.nodes.degree.aslist()
+    with open(f'outputs/{output_fname}.csv', 'a') as f:
+        write = csv.writer(f)
+        stats, final_deg, final_vocab_list = H.run(run_length, False, display_num=display_num)
+        write.writerow(stats['A'])
+        write.writerow(stats['B'])
+        write.writerow(stats['AB'])
+        write.writerow(stats['Singleton'])
+    l_conn_comp = xgi.algorithms.connected.largest_connected_component(H)
+    conn_comps = xgi.algorithms.connected.connected_components(H)
+    conn_comp_sizes = [len(i) for i in conn_comps]
+    print(f'size of largest connected component = {len(l_conn_comp)}')
+    print(f'sizes of connected components = {conn_comp_sizes}')
+    print(f'number of connected components = {xgi.algorithms.connected.number_connected_components(H)}')
+    print(f'number of isolates = {len(H.nodes.isolates())}')
+    with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
+        write = csv.writer(h)
+        write.writerow(initial_deg)
+        write.writerow([float(H.rewire_counter)])
+        write.writerow(final_deg)
+        write.writerow(final_vocab_list)
+        h.close()
+    print('thread complete')
+    
+    # for i in range(display_num):
+    #     fig = H.figs[i]
+    #     fig.savefig(f'test{i}.png')
         
 
-print('update19')
+print('update35')
 # # test code
 
-output_fname = 'test'
-edges = [[1,2,3], [1,2], [2,3], [1,4]]
-committed_nodes = [3, 4]
-uncommitted_nodes = [1,2]
+# output_fname = 'test'
+# edges = [[1,2,3], [1,2], [2,3], [1,4]]
+# committed_nodes = [3, 4]
+# uncommitted_nodes = [1,2]
 
-H = HigherOrderNamingGame(rule='Unanimous')
-H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
-H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
-print(edges[0])
-H.add_edges_from(edges)
+# H = HigherOrderNamingGame(rule='Unanimous')
+# H.add_naming_game_node(uncommitted_nodes, ['A'], False, beta=1, q=1)
+# H.add_naming_game_node(committed_nodes, ['B'], True, beta=1, q=1)
+# print(edges[0])
+# H.add_edges_from(edges)
 
-out = H.run(20, True, display_num=3)
+# out = H.run(20, True, display_num=3)
 
 # # run_ensemble_experiment(0.03, 0.27, 0.27, 1, 10**5, 'LyonSchool', q_non_committed=1, q_committed=1)
 #%%
