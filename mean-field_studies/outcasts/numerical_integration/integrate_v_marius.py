@@ -225,7 +225,7 @@ notes so far:
 '''
 #%%
 
-p=0.06
+p=0.10
 
 sys = system(N=213, beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, gamma=8, dist = 'InVS15', t_max=10**6)
 sys.scipy_integrate()
@@ -239,13 +239,13 @@ sys.scipy_integrate()
 # plt.legend()
 
 
-plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
 plt.plot(sys.scipy_f_A, label='f_A')
 plt.plot(sys.scipy_f_B + sys.scipy_f_Bcom, label='f_B')
 plt.plot(sys.scipy_f_AB, label='f_AB')
 #plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
 plt.xscale('log')
-plt.legend()
+plt.legend(title = sys.dist)
 plt.show()
 
 #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')

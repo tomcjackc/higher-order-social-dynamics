@@ -31,7 +31,11 @@ def get_edges_and_uniques(fname):
     return edges, unique_id
 
 
-
+def normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
 
 
 class system():
@@ -45,9 +49,11 @@ class system():
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
-            self.dist = self.dist[0]
             self.N = self.dist[1]
             self.gamma = self.dist[2]
+            self.dist = self.dist[0]
+            print(self.N, self.gamma)
+            
         self.possible_n = np.linspace(1, self.N, num=self.N, endpoint=True, dtype=int)
         self.trunc_possible_n = self.possible_n[1:-1]
         self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
@@ -80,10 +86,10 @@ class system():
                 return (1/self.gamma)*np.e**((-n-2)/self.gamma)
             if self.dist == 'binomial':
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
-                return binom.pmf(n-1, self.N, p)
+                return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
-               
+                self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
                     return np.array([dict_edges.get(j, 0) for j in n])
@@ -91,7 +97,7 @@ class system():
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
-                
+                self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
                     return np.array([dict_edges.get(j, 0) for j in n])
@@ -99,7 +105,7 @@ class system():
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
-                
+                self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
                     return np.array([dict_edges.get(j, 0) for j in n])
@@ -107,7 +113,7 @@ class system():
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
                 edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
-               
+                self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
                 if type(n) == type(np.array([])):
@@ -133,6 +139,7 @@ class system():
     def w_AAB(self):
         sum = 0
         for n in range(1, self.N+1):
+            
             sum += self.g(n)*self.pi(n)*self.w_AAB_n(n)
         return sum
     
@@ -205,16 +212,21 @@ class system():
     #structural dynamics
     def dpi_n_dt(self):
         # n is a list/array in this function
-        dpi_n_dt = self.w_nnm1()*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n()*self.pi(self.trunc_possible_n)
+        norm_term = 1/self.no_edges
+        dpi_n_dt = norm_term*(self.w_nnm1()*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n()*self.pi(self.trunc_possible_n))
+        #print(self.pi(self.possible_n)[:5])
         return dpi_n_dt
     
     def dpi_1_dt(self):
-        dpi_1_dt = self.w_nnp1(1)*self.pi(2)-self.w_np1n()*self.pi(1)
+        norm_term = 1/self.no_edges
+        dpi_1_dt = norm_term*(self.w_nnp1(1)*self.pi(2)-self.w_np1n()*self.pi(1))
+        #print(self.w_nnp1(1))
         return dpi_1_dt
     
     def dpi_N_dt(self):
         # n is a scalar in this function
-        dpi_N_dt = self.w_nnm1()*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N)
+        norm_term = 1/self.no_edges
+        dpi_N_dt = norm_term*(self.w_nnm1()*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N))
         return dpi_N_dt
     
     def P_no_consensus(self, n):
@@ -225,6 +237,7 @@ class system():
             self.AB_consensus_poss(n,k=0)*(1+\
             (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)+\
             (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))
+        
         return P
     
     def w_nnm1(self):
@@ -235,14 +248,14 @@ class system():
     
     def w_nnp1(self, n):
         if type(n)==type(np.array([])):
-            return self.pi(n)*np.array([self.P_no_consensus(j) for j in n])*self.q
+            return np.array([self.P_no_consensus(j+1) for j in n])*self.q
         else:
-            return self.pi(n)*self.P_no_consensus(n)*self.q
+            return self.P_no_consensus(n+1)*self.q
     def w_nm1n(self, n):
         if type(n)==type(np.array([])):
-            return self.pi(n)*np.array([self.P_no_consensus(j) for j in n])*self.q
+            return np.array([self.P_no_consensus(j) for j in n])*self.q
         else:
-            return self.pi(n)*self.P_no_consensus(n)*self.q
+            return self.P_no_consensus(n)*self.q
     
     def w_np1n(self):
         sum = 0
@@ -283,19 +296,23 @@ class system():
             self.f_B.append(f_B)
             self.f_Bcom.append(f_Bcom)
             self.f_AB.append(f_AB)
-
+            #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
+            self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
+            
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
 
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
-
+            #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
         res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
+        self.res = res
         self.scipy_f_A = res[:, 0]
         self.scipy_f_B = res[:, 1]
+        self.scipy_pi = res[::2*10**2, 2:]
         self.scipy_f_Bcom = np.full_like(res[:, 0], self.f_Bcom_init)
         self.scipy_f_AB = np.ones_like(res[:, 0])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
         self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
@@ -326,7 +343,7 @@ notes so far:
 #%%
 
 p = 0.11
-sys = system(dist='Thiers13', beta=0.2759, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=1)
+sys = system(dist='Thiers13', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=1)
 sys.scipy_integrate()
 
 # plt.figure()
@@ -336,7 +353,7 @@ sys.scipy_integrate()
 # plt.plot(sys.f_AB, label='f_AB')
 # plt.plot(sys.f_Bcom, label='f_Bcom')
 # plt.legend()
-
+#%%
 plt.figure(1)
 plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
 plt.plot(sys.scipy_f_A, label='f_A')
@@ -352,5 +369,20 @@ plt.plot(sys.scipy_M, label='Magnetisation')
 plt.xscale('log')
 plt.ylim((-1,1))
 plt.legend()
-
+plt.show()
 #%%
+for i in range(0,10**5,10**3):
+    pi_n = sys.res[i, 2:]
+    plt.plot(pi_n, label= f't={i}')
+    plt.ylim((0,1))
+    plt.legend()
+    plt.show()
+#%%
+
+plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
+
+plt.xscale('log')
+
+
+
+

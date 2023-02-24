@@ -160,10 +160,21 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
         """
         new_edge_id = rand.choice(self.edges)
-        while new_edge_id == edge_id:
+        
+        while new_edge_id not in self.nodes.memberships(speaker_id):
             new_edge_id = rand.choice(self.edges)
         self.remove_node_from_edge(edge_id, speaker_id)
         self.add_node_to_edge(new_edge_id, speaker_id)
+        
+        
+        
+        
+        
+        
+        # while new_edge_id == edge_id:
+        #     new_edge_id = rand.choice(self.edges)
+        # self.remove_node_from_edge(edge_id, speaker_id)
+        # self.add_node_to_edge(new_edge_id, speaker_id)
        
         
                 
@@ -223,8 +234,13 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-
-    
+            if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i] == 0:
+                vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
+                vocab_counts['A'][i+2:] = np.zeros((runlength-i-1))
+                vocab_counts['B'][i+2:] = np.ones((runlength-i-1))
+                vocab_counts['time_to_consensus'] = i+1
+                break
+        vocab_counts['time_to_consensus'] = vocab_counts.get('time_to_consensus', np.inf)
         return vocab_counts
 
 
@@ -282,6 +298,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(initial_size)
             write.writerow(final_size)
             h.close()
+        
 
 
 
