@@ -10,6 +10,7 @@ import itertools
 from tqdm import tqdm
 import csv
 import os
+import multiprocessing
 
 
 #%%
@@ -161,7 +162,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         """
         new_edge_id = rand.choice(self.edges)
         
-        while new_edge_id not in self.nodes.memberships(speaker_id):
+        while new_edge_id in self.nodes.memberships(speaker_id):
             new_edge_id = rand.choice(self.edges)
         self.remove_node_from_edge(edge_id, speaker_id)
         self.add_node_to_edge(new_edge_id, speaker_id)
@@ -256,7 +257,7 @@ def get_edges_and_uniques(fname):
 
 
 
-def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, q, rule='Unanimous', thr=3):
+def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, q, rule, thr):
     
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
@@ -266,6 +267,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
         os.remove(f"outputs/{output_fname}.csv")
+    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
+        os.remove(f"aux_outputs/{output_fname}.csv")
     ###
 
     for k in tqdm(range(ensemble_size)):
@@ -298,6 +301,21 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(initial_size)
             write.writerow(final_size)
             h.close()
+            
+def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_length, social_structures, qs, rule = 'Unanimous', thr = 3):
+    args = []
+    for social_structure in social_structures:
+        for p in prop_committed:
+            for b in betas:
+                for q in qs:
+                    args.append((p,b,b,ensemble_size, run_length, social_structure, q, rule, thr))
+    
+   
+    with multiprocessing.Pool() as pool:
+        # Use the pool to map the function to the arguments
+        pool.starmap(run_ensemble_experiment, args)
+        
+
         
 
 
