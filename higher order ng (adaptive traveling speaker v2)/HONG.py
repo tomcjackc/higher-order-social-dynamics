@@ -11,7 +11,8 @@ from tqdm import tqdm
 import csv
 import os
 import multiprocessing
-
+from numpy import genfromtxt
+import pandas as pd
 
 #%%
 
@@ -235,12 +236,12 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-            if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i] == 0:
-                vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
-                vocab_counts['A'][i+2:] = np.zeros((runlength-i-1))
-                vocab_counts['B'][i+2:] = np.ones((runlength-i-1))
-                vocab_counts['time_to_consensus'] = i+1
-                break
+            # if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i+1] == 0:
+            #     vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
+            #     vocab_counts['A'][i+2:] = np.zeros((runlength-i-1))
+            #     vocab_counts['B'][i+2:] = np.ones((runlength-i-1))
+            #     vocab_counts['time_to_consensus'] = i+1
+            #     break
         vocab_counts['time_to_consensus'] = vocab_counts.get('time_to_consensus', np.inf)
         return vocab_counts
 
@@ -315,7 +316,53 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
         # Use the pool to map the function to the arguments
         pool.starmap(run_ensemble_experiment, args)
         
-
+def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
+    
+    Bstar_arr = np.zeros((len(prop_committed),len(betas)))
+    Astar_arr = np.zeros((len(prop_committed),len(betas)))
+    for social_structure in social_structures:
+        for q in qs:
+            for i, p in enumerate(prop_committed):
+                for j, b in enumerate(betas):
+                    
+                    fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}_{ensemble_size}'
+                    
+                    data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+                    
+                    A_value, B_value, AB_value = steady_state_preprocessing(data, run_length)
+                    
+                    Bstar_arr[j,i] = B_value
+                    Astar_arr[j,i] = A_value
+                    
+            fname = f'heatmap_res_{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
+            df = pd.DataFrame(Bstar_arr-Astar_arr, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/{fname}.csv')
+    
+def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
+                A_data = data[0::3,:]
+                B_data = data[1::3,:]
+                AB_data = data[2::3,:]
+    
+                N = A_data[0,0]+B_data[0,0]+AB_data[0,0]
+    
+                A_data = A_data/N
+                B_data = B_data/N
+                AB_data = AB_data/N
+                indices = np.random.choice(np.arange(run_length - sample_size, run_length, 1), size = m, replace = False)
+                
+                A_data = A_data.T[indices]                
+                A_data = np.mean(A_data, axis = 0)
+                A_value = np.median(A_data)
+                
+                B_data = B_data.T[indices]
+                B_data = np.mean(B_data, axis = 0)
+                B_value = np.median(B_data)
+                
+                AB_data = AB_data.T[indices]
+                AB_data = np.mean(AB_data, axis = 0)
+                AB_value = np.median(AB_data)
+                return A_value, B_value, AB_value
+            
         
 
 
