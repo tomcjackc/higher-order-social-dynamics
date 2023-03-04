@@ -353,6 +353,10 @@ sys.scipy_integrate()
 # plt.plot(sys.f_AB, label='f_AB')
 # plt.plot(sys.f_Bcom, label='f_Bcom')
 # plt.legend()
+
+#%%
+
+
 #%%
 plt.figure(1)
 plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
