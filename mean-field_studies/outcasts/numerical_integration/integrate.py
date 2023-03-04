@@ -48,6 +48,7 @@ class system():
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
+            self
         elif type(self.dist) == list:
             self.N = self.dist[1]
             self.gamma = self.dist[2]
@@ -162,10 +163,10 @@ class system():
         return self.beta*self.speaker_says_A_given_A_con_poss_lookingatAB(n)*self.A_consensus_poss_lookingatAB(n, k=1)
     
     def w_ABA_n(self, n):
-        return self.beta*self.speaker_says_B_given_B_con_not_possible_lookingatA(n)
+        return self.speaker_says_B_given_B_con_not_possible_lookingatA(n)
     
     def w_ABB_n(self, n):
-        return self.beta*self.speaker_says_A_given_A_con_not_possible_lookingatB(n)
+        return self.speaker_says_A_given_A_con_not_possible_lookingatB(n)
 
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
@@ -234,8 +235,8 @@ class system():
             (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
             (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)) - \
-            self.AB_consensus_poss(n,k=0)*(1+\
-            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)+\
+            self.AB_consensus_poss(n,k=0)*(1-\
+            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]-self.f_Bcom[-1]))*((n-1)/n)+\
             (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))
         
         return P
@@ -290,8 +291,12 @@ class system():
             pi_0 = f[2]
             pi_n = f[3:-1]
             pi_N = f[-1]
-
-            #print(int(t))
+            if f_A < 10**(-5):
+                f_A = 0
+            if f_AB < 10**(-5):
+                f_AB = 0
+            
+           
             self.f_A.append(f_A)
             self.f_B.append(f_B)
             self.f_Bcom.append(f_Bcom)
@@ -343,7 +348,7 @@ notes so far:
 #%%
 
 p = 0.11
-sys = system(dist='Thiers13', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=1)
+sys = system(dist='InVS15', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=0)
 sys.scipy_integrate()
 
 # plt.figure()
