@@ -351,6 +351,7 @@ notes so far:
 #%%
 
 def create_and_integrate(dist, beta, t_max, q, p):
+    print(f'beta={beta}, p={p}, q={q}\n')
     output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
     sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
     sys.scipy_integrate()
@@ -378,7 +379,7 @@ def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_struc
     with multiprocessing.Pool() as pool:
         # Use the pool to map the function to the arguments
         pool.starmap(create_and_integrate, args)
-    
+
 def create_csvs_from_outputs(prop_committed, betas, run_length, social_structures, qs):
     Bstar = np.zeros((len(betas), len(prop_committed)))
     Astar = np.zeros((len(betas), len(prop_committed)))
@@ -412,8 +413,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
             df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
             df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
 
-betas = np.linspace(0, 1, 5)
-ps = np.linspace(0, 1, 5)
+
+betas = [0.01, 0.05, 0.1, 0.15]
+ps = [0.01, 0.05, 0.1, 0.15]
 qs = [0,1]
 social_structures = ['LyonSchool']
 run_length = 10**4
@@ -423,34 +425,34 @@ warnings.filterwarnings("ignore")
 run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
 
 #%%
-plt.figure(1)
-plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
-plt.plot(sys.scipy_f_A, label='f_A')
-plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
-plt.plot(sys.scipy_f_AB, label='f_AB')
-# plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
-plt.xscale('log')
-plt.legend(title = sys.dist)
+# plt.figure(1)
+# plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
+# plt.plot(sys.scipy_f_A, label='f_A')
+# plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
+# plt.plot(sys.scipy_f_AB, label='f_AB')
+# # plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
+# plt.xscale('log')
+# plt.legend(title = sys.dist)
 
-plt.figure(2)
-#plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.scipy_M, label='Magnetisation')
-plt.xscale('log')
-plt.ylim((-1,1))
-plt.legend()
-plt.show()
-#%%
-for i in range(0,10**5,10**3):
-    pi_n = sys.res[i, 2:]
-    plt.plot(pi_n, label= f't={i}')
-    plt.ylim((0,1))
-    plt.legend()
-    plt.show()
-#%%
+# plt.figure(2)
+# #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_M, label='Magnetisation')
+# plt.xscale('log')
+# plt.ylim((-1,1))
+# plt.legend()
+# plt.show()
+# #%%
+# for i in range(0,10**5,10**3):
+#     pi_n = sys.res[i, 2:]
+#     plt.plot(pi_n, label= f't={i}')
+#     plt.ylim((0,1))
+#     plt.legend()
+#     plt.show()
+# #%%
 
-plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
+# plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
 
-plt.xscale('log')
+# plt.xscale('log')
 
 
 
