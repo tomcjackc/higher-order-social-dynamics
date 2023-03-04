@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.stats import poisson
 from scipy.stats import binom
 import itertools
+import multiprocessing
+import csv
+from numpy import genfromtxt
 
 def count_lists(lst):
     d = {}
@@ -48,7 +51,6 @@ class system():
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
-            self
         elif type(self.dist) == list:
             self.N = self.dist[1]
             self.gamma = self.dist[2]
@@ -345,22 +347,80 @@ notes so far:
         N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.7, t_max=10**5, q=0, dist='poisson'
     whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
 '''
-#%%
-
-p = 0.11
-sys = system(dist='InVS15', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=0)
-sys.scipy_integrate()
-
-# plt.figure()
-# plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-# plt.plot(sys.f_A, label='f_A')
-# plt.plot(sys.f_B, label='f_B')
-# plt.plot(sys.f_AB, label='f_AB')
-# plt.plot(sys.f_Bcom, label='f_Bcom')
-# plt.legend()
 
 #%%
 
+def create_and_integrate(dist, beta, t_max, q, p):
+    output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
+    sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
+    sys.scipy_integrate()
+    f_A_star = sys.scipy_f_A[-1]
+    f_B_star = sys.scipy_f_B[-1]+sys.scipy_f_Bcom[-1]
+    f_AB_star = sys.scipy_f_AB[-1]
+
+    with open(f'outputs/{output_fname}.csv', 'a') as f:
+            write = csv.writer(f)
+            write.writerow(sys.scipy_f_A)
+            write.writerow(sys.scipy_f_B+sys.scipy_f_Bcom)
+            write.writerow(sys.scipy_f_AB)
+
+def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
+    args = []
+    for social_structure in social_structures:
+        for p in prop_committed:
+            for b in betas:
+                for q in qs:
+                    p = round(p, 2)
+                    b = round(b, 2)
+                    args.append((social_structure, b, run_length, q, p))
+    
+   
+    with multiprocessing.Pool() as pool:
+        # Use the pool to map the function to the arguments
+        pool.starmap(create_and_integrate, args)
+    
+def create_csvs_from_outputs(prop_committed, betas, run_length, social_structures, qs):
+    Bstar = np.zeros((len(betas), len(prop_committed)))
+    Astar = np.zeros((len(betas), len(prop_committed)))
+    
+    for social_structure in social_structures:
+        for q in qs:
+            for i, p in enumerate(prop_committed):
+                for j, b in enumerate(betas):
+                    p = round(p, 2)
+                    b = round(b, 2)
+                    prop_committed[i] = p
+                    betas[j] = b
+
+
+                    fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}'
+                    
+                    data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+                    
+                    A_value = data[0, -1]
+                    B_value = data[1, -1]
+                    AB_value = data[2, -1]
+                    
+                    Bstar[j,i] = B_value
+                    Astar[j,i] = A_value
+                    
+                    print(p,b) 
+            
+            fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_q={q}_{run_length}'
+            df = pd.DataFrame(Bstar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_int_B_res_{fname}.csv')
+            df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
+
+betas = np.linspace(0, 1, 5)
+ps = np.linspace(0, 1, 5)
+qs = [0,1]
+social_structures = ['LyonSchool']
+run_length = 10**4
+import warnings
+warnings.filterwarnings("ignore")
+
+run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
 
 #%%
 plt.figure(1)
