@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.stats import poisson
 from scipy.stats import binom
 import itertools
+import multiprocessing
+import csv
+from numpy import genfromtxt
 
 def count_lists(lst):
     d = {}
@@ -48,7 +51,6 @@ class system():
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
             edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
-            self
         elif type(self.dist) == list:
             self.N = self.dist[1]
             self.gamma = self.dist[2]
@@ -171,19 +173,19 @@ class system():
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k, n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))
+            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))
+            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_AB[-1]-(i/self.N))
+            mult = mult*(self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
@@ -291,10 +293,10 @@ class system():
             pi_0 = f[2]
             pi_n = f[3:-1]
             pi_N = f[-1]
-            if f_A < 10**(-5):
-                f_A = 0
-            if f_AB < 10**(-5):
-                f_AB = 0
+            # if f_A < 10**(-5):
+            #     f_A = 0
+            # if f_AB < 10**(-5):
+            #     f_AB = 0
             
            
             self.f_A.append(f_A)
@@ -303,13 +305,15 @@ class system():
             self.f_AB.append(f_AB)
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
-            
+            #print(self.pi_n[0:20])
+            print(t)
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
 
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
+            print(sum(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))))
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
@@ -345,29 +349,116 @@ notes so far:
         N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.7, t_max=10**5, q=0, dist='poisson'
     whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
 '''
+
 #%%
 
-p = 0.11
-sys = system(dist='InVS15', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**5, q=0)
+<<<<<<< HEAD:mean-field_studies/outcasts/numerical_integration/integrate.py
+p = 0.1
+sys = system(dist='InVS15', beta=0.01, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**4, q=0.1)
 sys.scipy_integrate()
+=======
+def create_and_integrate(dist, beta, t_max, q, p):
+    print(f'beta={beta}, p={p}, q={q}\n')
+    output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
+    sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
+    sys.scipy_integrate()
+    f_A_star = sys.scipy_f_A[-1]
+    f_B_star = sys.scipy_f_B[-1]+sys.scipy_f_Bcom[-1]
+    f_AB_star = sys.scipy_f_AB[-1]
+>>>>>>> 48d16fa2d7d10b092133db8bed0892e5063912d6:mean-field_studies/preacher/numerical_integration/integrate.py
 
-# plt.figure()
-# plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-# plt.plot(sys.f_A, label='f_A')
-# plt.plot(sys.f_B, label='f_B')
-# plt.plot(sys.f_AB, label='f_AB')
-# plt.plot(sys.f_Bcom, label='f_Bcom')
-# plt.legend()
+    with open(f'outputs/{output_fname}.csv', 'a') as f:
+            write = csv.writer(f)
+            write.writerow(sys.scipy_f_A)
+            write.writerow(sys.scipy_f_B+sys.scipy_f_Bcom)
+            write.writerow(sys.scipy_f_AB)
+
+def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
+    args = []
+    for social_structure in social_structures:
+        for p in prop_committed:
+            for b in betas:
+                for q in qs:
+                    p = round(p, 2)
+                    b = round(b, 2)
+                    args.append((social_structure, b, run_length, q, p))
+    
+   
+    with multiprocessing.Pool() as pool:
+        # Use the pool to map the function to the arguments
+        pool.starmap(create_and_integrate, args)
+
+def create_csvs_from_outputs(prop_committed, betas, run_length, social_structures, qs):
+    Bstar = np.zeros((len(betas), len(prop_committed)))
+    Astar = np.zeros((len(betas), len(prop_committed)))
+    
+    for social_structure in social_structures:
+        for q in qs:
+            for i, p in enumerate(prop_committed):
+                for j, b in enumerate(betas):
+                    p = round(p, 2)
+                    b = round(b, 2)
+                    prop_committed[i] = p
+                    betas[j] = b
+
+
+                    fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}'
+                    
+                    data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+                    
+                    A_value = data[0, -1]
+                    B_value = data[1, -1]
+                    AB_value = data[2, -1]
+                    
+                    Bstar[j,i] = B_value
+                    Astar[j,i] = A_value
+                    
+                    print(p,b) 
+            
+            fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_q={q}_{run_length}'
+            df = pd.DataFrame(Bstar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_int_B_res_{fname}.csv')
+            df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
+
+
+betas = [0.01, 0.05, 0.1, 0.15]
+ps = [0.01, 0.05, 0.1, 0.15]
+qs = [0,1]
+social_structures = ['LyonSchool']
+run_length = 10**4
+import warnings
+warnings.filterwarnings("ignore")
+
+run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+
 #%%
-plt.figure(1)
-plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
-plt.plot(sys.scipy_f_A, label='f_A')
-plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
-plt.plot(sys.scipy_f_AB, label='f_AB')
-# plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
-plt.xscale('log')
-plt.legend(title = sys.dist)
+# plt.figure(1)
+# plt.title(f'N={sys.N}, beta={sys.beta}, p={sys.f_Bcom_init},')
+# plt.plot(sys.scipy_f_A, label='f_A')
+# plt.plot(sys.scipy_f_B+sys.scipy_f_Bcom, label='f_B')
+# plt.plot(sys.scipy_f_AB, label='f_AB')
+# # plt.plot(sys.scipy_f_Bcom, label='f_Bcom')
+# plt.xscale('log')
+# plt.legend(title = sys.dist)
 
+# plt.figure(2)
+# #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_M, label='Magnetisation')
+# plt.xscale('log')
+# plt.ylim((-1,1))
+# plt.legend()
+# plt.show()
+# #%%
+# for i in range(0,10**5,10**3):
+#     pi_n = sys.res[i, 2:]
+#     plt.plot(pi_n, label= f't={i}')
+#     plt.ylim((0,1))
+#     plt.legend()
+#     plt.show()
+# #%%
+
+<<<<<<< HEAD:mean-field_studies/outcasts/numerical_integration/integrate.py
 plt.figure(2)
 #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
 plt.plot(sys.scipy_M, label='Magnetisation')
@@ -376,17 +467,19 @@ plt.ylim((-1,1))
 plt.legend()
 plt.show()
 #%%
-for i in range(0,10**5,10**3):
+for i in range(0,300,10):
     pi_n = sys.res[i, 2:]
+    #print(pi_n)
     plt.plot(pi_n, label= f't={i}')
     plt.ylim((0,1))
     plt.legend()
     plt.show()
 #%%
+=======
+# plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
+>>>>>>> 48d16fa2d7d10b092133db8bed0892e5063912d6:mean-field_studies/preacher/numerical_integration/integrate.py
 
-plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
-
-plt.xscale('log')
+# plt.xscale('log')
 
 
 
