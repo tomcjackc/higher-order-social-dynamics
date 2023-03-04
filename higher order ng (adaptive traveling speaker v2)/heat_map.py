@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 import itertools
-import HONG
+import HONG 
+from HONG import *
 import csv
 from tqdm import tqdm
 from numpy import genfromtxt
@@ -16,8 +17,8 @@ import csv
 
 #mpl.style.use('report_style.mplstyle')
 
-prop_committed = np.linspace(0.01, 0.2, 20)
-betas = np.linspace(0.05, 1, 20)
+prop_committed = [0.03]#np.linspace(0.01, 0.2, 20)
+betas = np.linspace(0, 1, 51)
 ensemble_size = 10
 run_length = 10**6
 qs = [1]

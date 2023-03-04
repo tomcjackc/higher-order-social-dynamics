@@ -309,6 +309,8 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
         for p in prop_committed:
             for b in betas:
                 for q in qs:
+                    p = round(p, 2)
+                    b = round(b, 2)
                     args.append((p,b,b,ensemble_size, run_length, social_structure, q, rule, thr))
     
    
@@ -318,25 +320,50 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
         
 def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
     
-    Bstar_arr = np.zeros((len(prop_committed),len(betas)))
-    Astar_arr = np.zeros((len(prop_committed),len(betas)))
+    Bstar = np.zeros((len(betas), len(prop_committed)))
+    Astar = np.zeros((len(betas), len(prop_committed)))
+    Bstar_25 = np.zeros((len(betas), len(prop_committed)))
+    Astar_25 = np.zeros((len(betas), len(prop_committed)))
+    Bstar_75 = np.zeros((len(betas), len(prop_committed)))
+    Astar_75 = np.zeros((len(betas), len(prop_committed)))
+    
     for social_structure in social_structures:
         for q in qs:
             for i, p in enumerate(prop_committed):
                 for j, b in enumerate(betas):
-                    
+                    p = round(p, 2)
+                    b = round(b, 2)
+                    prop_committed[i] = p
+                    betas[j] = b
+
+
                     fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}_{ensemble_size}'
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
                     
-                    A_value, B_value, AB_value = steady_state_preprocessing(data, run_length)
+                    A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length)
                     
-                    Bstar_arr[j,i] = B_value
-                    Astar_arr[j,i] = A_value
+                    Bstar[j,i] = B_value
+                    Astar[j,i] = A_value
+                    Bstar_25[j,i] = B_25
+                    Astar_25[j,i] = A_25
+                    Bstar_75[j,i] = B_75
+                    Astar_75[j,i] = A_75
                     
-            fname = f'heatmap_res_{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
-            df = pd.DataFrame(Bstar_arr-Astar_arr, index = prop_committed, columns = betas)
-            df.to_csv(f'finished_outputs/{fname}.csv')
+                    print(p,b) 
+            fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
+            df = pd.DataFrame(Bstar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_B_res_{fname}.csv')
+            df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_A_res_{fname}.csv')
+            df = pd.DataFrame(Bstar_25, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_B25_res_{fname}.csv')
+            df = pd.DataFrame(Astar_25, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_A25_res_{fname}.csv')
+            df = pd.DataFrame(Bstar_75, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_B75_res_{fname}.csv')
+            df = pd.DataFrame(Astar_75, index = prop_committed, columns = betas)
+            df.to_csv(f'finished_outputs/heatmap_A75_res_{fname}.csv')
     
 def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
                 A_data = data[0::3,:]
@@ -353,15 +380,17 @@ def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
                 A_data = A_data.T[indices]                
                 A_data = np.mean(A_data, axis = 0)
                 A_value = np.median(A_data)
+                A_25 = np.percentile(A_data, 25)
+                A_75 = np.percentile(A_data, 75)
                 
                 B_data = B_data.T[indices]
                 B_data = np.mean(B_data, axis = 0)
                 B_value = np.median(B_data)
+                B_25 = np.percentile(B_data, 25)
+                B_75 = np.percentile(B_data, 75)
                 
-                AB_data = AB_data.T[indices]
-                AB_data = np.mean(AB_data, axis = 0)
-                AB_value = np.median(AB_data)
-                return A_value, B_value, AB_value
+                
+                return A_value, A_25, A_75, B_value, B_25, B_75
             
         
 
