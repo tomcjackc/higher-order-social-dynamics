@@ -305,15 +305,16 @@ class system():
             self.f_AB.append(f_AB)
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
+            #print(sum(self.pi_n))
             #print(self.pi_n[0:20])
-            print(t)
+            #print(t)
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
 
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
-            print(sum(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))))
+            #print(sum(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))))
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
@@ -352,11 +353,9 @@ notes so far:
 
 #%%
 
-<<<<<<< HEAD:mean-field_studies/outcasts/numerical_integration/integrate.py
-p = 0.1
-sys = system(dist='InVS15', beta=0.01, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**4, q=0.1)
-sys.scipy_integrate()
-=======
+
+
+
 def create_and_integrate(dist, beta, t_max, q, p):
     print(f'beta={beta}, p={p}, q={q}\n')
     output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
@@ -365,7 +364,6 @@ def create_and_integrate(dist, beta, t_max, q, p):
     f_A_star = sys.scipy_f_A[-1]
     f_B_star = sys.scipy_f_B[-1]+sys.scipy_f_Bcom[-1]
     f_AB_star = sys.scipy_f_AB[-1]
->>>>>>> 48d16fa2d7d10b092133db8bed0892e5063912d6:mean-field_studies/preacher/numerical_integration/integrate.py
 
     with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
@@ -422,9 +420,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
             df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
 
 
-betas = [0.01, 0.05, 0.1, 0.15]
-ps = [0.01, 0.05, 0.1, 0.15]
-qs = [0,1]
+betas = [0.1]#[0.01, 0.05, 0.1, 0.15]
+ps = [0.1]#[0.01, 0.05, 0.1, 0.15]
+qs = [1]
 social_structures = ['LyonSchool']
 run_length = 10**4
 import warnings
@@ -458,26 +456,25 @@ run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
 #     plt.show()
 # #%%
 
-<<<<<<< HEAD:mean-field_studies/outcasts/numerical_integration/integrate.py
-plt.figure(2)
-#plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
-plt.plot(sys.scipy_M, label='Magnetisation')
-plt.xscale('log')
-plt.ylim((-1,1))
-plt.legend()
-plt.show()
+
+# plt.figure(2)
+# #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_M, label='Magnetisation')
+# plt.xscale('log')
+# plt.ylim((-1,1))
+# plt.legend()
+# plt.show()
+# #%%
+# for i in range(0,300,10):
+#     pi_n = sys.res[i, 2:]
+#     #print(pi_n)
+#     plt.plot(pi_n, label= f't={i}')
+#     plt.ylim((0,1))
+#     plt.legend()
+#     plt.show()
 #%%
-for i in range(0,300,10):
-    pi_n = sys.res[i, 2:]
-    #print(pi_n)
-    plt.plot(pi_n, label= f't={i}')
-    plt.ylim((0,1))
-    plt.legend()
-    plt.show()
-#%%
-=======
+
 # plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
->>>>>>> 48d16fa2d7d10b092133db8bed0892e5063912d6:mean-field_studies/preacher/numerical_integration/integrate.py
 
 # plt.xscale('log')
 
