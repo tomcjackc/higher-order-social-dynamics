@@ -352,17 +352,17 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     
                     print(p,b) 
             fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
-            df = pd.DataFrame(Bstar, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Bstar, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_B_res_{fname}.csv')
-            df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Astar, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_A_res_{fname}.csv')
-            df = pd.DataFrame(Bstar_25, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Bstar_25, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_B25_res_{fname}.csv')
-            df = pd.DataFrame(Astar_25, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Astar_25, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_A25_res_{fname}.csv')
-            df = pd.DataFrame(Bstar_75, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Bstar_75, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_B75_res_{fname}.csv')
-            df = pd.DataFrame(Astar_75, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Astar_75, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_A75_res_{fname}.csv')
     
 def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
@@ -392,7 +392,7 @@ def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
                 
                 return A_value, A_25, A_75, B_value, B_25, B_75
             
-def delete_csv(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
+def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
     for social_structure in social_structures:
         for q in qs:
             for i, p in enumerate(prop_committed):
@@ -405,9 +405,6 @@ def delete_csv(prop_committed, betas, ensemble_size, run_length, social_structur
                             os.remove(f"outputs/{fname}.csv")
             
         
-
-
-
 
 
 
