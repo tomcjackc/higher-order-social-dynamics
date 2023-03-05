@@ -491,9 +491,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
                     print(p,b) 
             
             fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_q={q}_{run_length}'
-            df = pd.DataFrame(Bstar, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Bstar, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_int_B_res_{fname}.csv')
-            df = pd.DataFrame(Astar, index = prop_committed, columns = betas)
+            df = pd.DataFrame(Astar, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
 
 
