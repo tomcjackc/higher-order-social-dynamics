@@ -1,4 +1,10 @@
-#%%
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec  3 19:41:22 2022
+
+@author: Marius
+"""
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -35,10 +41,10 @@ def get_edges_and_uniques(fname):
 
 
 def normalize(v):
-    norm = np.linalg.norm(v)
-    if norm == 0: 
-       return v
-    return v / norm
+    # norm = np.linalg.norm(v)
+    # if norm == 0: 
+    #    return v
+    return v / sum(v)
 
 
 class system():
@@ -272,6 +278,7 @@ class system():
         self.f_B.append(self.f_B[-1]+self.df_B())
         self.f_Bcom.append(self.f_Bcom[-1])
         self.f_AB.append(1-self.f_B[-1]-self.f_A[-1]-self.f_Bcom[-1])
+        
 
         self.t += 1
     
@@ -305,21 +312,31 @@ class system():
             self.f_AB.append(f_AB)
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
-            #print(sum(self.pi_n))
-            #print(self.pi_n[0:20])
-            #print(t)
+            print(t)
+            
+            # print(f'This is f_A = {f_A}')
+            # print(f'This is f_B = {f_B}')
+            # print(f'This is f_AB = {f_AB}')
+            
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
-
+            # print(f'This is df_A_dt = {df_A_dt}')
+            # print(f'This is df_B_dt = {df_B_dt}')
+            #print(f'This is f_AB = {f_AB}')
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
-            #print(sum(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))))
+            arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
+            x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            print(f'For n={np.argmax(arr)}, dpi_n={x}')
+            print(f'For n={np.argmin(arr)}, dpi_n={y}')
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
         res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
         self.res = res
+        print(res.shape)
         self.scipy_f_A = res[:, 0]
         self.scipy_f_B = res[:, 1]
         self.scipy_pi = res[::2*10**2, 2:]
@@ -420,15 +437,23 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
             df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
 
 
-betas = [0.1]#[0.01, 0.05, 0.1, 0.15]
-ps = [0.1]#[0.01, 0.05, 0.1, 0.15]
-qs = [1]
-social_structures = ['LyonSchool']
-run_length = 10**4
-import warnings
-warnings.filterwarnings("ignore")
+# betas = [0.01, 0.05, 0.1, 0.15]
+# ps = [0.01, 0.05, 0.1, 0.15]
+# qs = [0,1]
+# social_structures = ['LyonSchool']
+# run_length = 10**4
+# import warnings
+# warnings.filterwarnings("ignore")
 
-run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+# run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+p=0.1
+
+sys = system(dist='InVS15', beta=0.4, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=10**4, q=1)
+sys.scipy_integrate()
+
+
+
+
 
 #%%
 # plt.figure(1)
