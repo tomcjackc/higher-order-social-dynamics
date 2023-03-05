@@ -313,15 +313,15 @@ class system():
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
             print(t)
-            
-            # print(f'This is f_A = {f_A}')
-            # print(f'This is f_B = {f_B}')
+            print(self.pi_n[:10])
+            #print(f'This is f_A = {f_A}')
+            #print(f'This is f_B = {f_B}')
             # print(f'This is f_AB = {f_AB}')
             
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
-            # print(f'This is df_A_dt = {df_A_dt}')
-            # print(f'This is df_B_dt = {df_B_dt}')
+            #print(f'This is df_A_dt = {df_A_dt}')
+            #print(f'This is df_B_dt = {df_B_dt}')
             #print(f'This is f_AB = {f_AB}')
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
@@ -334,7 +334,7 @@ class system():
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
-        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
+        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False), rtol=1,atol=1, hmin=1 )
         self.res = res
         print(res.shape)
         self.scipy_f_A = res[:, 0]
