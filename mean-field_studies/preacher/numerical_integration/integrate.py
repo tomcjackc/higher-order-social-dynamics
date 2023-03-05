@@ -1,4 +1,10 @@
-#%%
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec  3 19:41:22 2022
+
+@author: Marius
+"""
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -171,19 +177,19 @@ class system():
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k, n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))
+            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))
+            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_AB[-1]-(i/self.N))
+            mult = mult*(self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
@@ -271,6 +277,7 @@ class system():
         self.f_B.append(self.f_B[-1]+self.df_B())
         self.f_Bcom.append(self.f_Bcom[-1])
         self.f_AB.append(1-self.f_B[-1]-self.f_A[-1]-self.f_Bcom[-1])
+        
 
         self.pi_n = normalize(np.concatenate((np.array([self.pi_n[0]])+self.dpi_1_dt(),self.pi_n[1:-1]+self.dpi_n_dt(),np.array([self.pi_n[-1]])+self.dpi_N_dt())))
 
@@ -306,18 +313,31 @@ class system():
             self.f_AB.append(f_AB)
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
+            print(t)
+            print(self.pi_n[:10])
+            #print(f'This is f_A = {f_A}')
+            #print(f'This is f_B = {f_B}')
+            # print(f'This is f_AB = {f_AB}')
             
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
             df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
-
+            #print(f'This is df_A_dt = {df_A_dt}')
+            #print(f'This is df_B_dt = {df_B_dt}')
+            #print(f'This is f_AB = {f_AB}')
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
+            arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
+            x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            print(f'For n={np.argmax(arr)}, dpi_n={x}')
+            print(f'For n={np.argmin(arr)}, dpi_n={y}')
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
-        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
+        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False), rtol=1,atol=1, hmin=1 )
         self.res = res
+        print(res.shape)
         self.scipy_f_A = res[:, 0]
         self.scipy_f_B = res[:, 1]
         self.scipy_pi = res[::2*10**2, 2:]
@@ -396,6 +416,9 @@ notes so far:
 '''
 
 #%%
+
+
+
 
 def create_and_integrate(dist, beta, t_max, q, p):
     print(f'beta={beta}, p={p}, q={q}\n')
@@ -510,6 +533,24 @@ create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
 #     plt.legend()
 #     plt.show()
 # #%%
+
+
+# plt.figure(2)
+# #plt.title(f'N={sys.N}, beta={sys.beta}, f_A_init={sys.f_A_init}, f_B_init={sys.f_B_init}, f_Bcom_init={sys.f_Bcom_init}, gamma={sys.gamma}, t_max={sys.t_max}')
+# plt.plot(sys.scipy_M, label='Magnetisation')
+# plt.xscale('log')
+# plt.ylim((-1,1))
+# plt.legend()
+# plt.show()
+# #%%
+# for i in range(0,300,10):
+#     pi_n = sys.res[i, 2:]
+#     #print(pi_n)
+#     plt.plot(pi_n, label= f't={i}')
+#     plt.ylim((0,1))
+#     plt.legend()
+#     plt.show()
+#%%
 
 # plt.plot(np.array([sum(sys.res[j, 2:]) for j in range(100000)]))
 

@@ -392,6 +392,18 @@ def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
                 
                 return A_value, A_25, A_75, B_value, B_25, B_75
             
+def delete_csv(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
+    for social_structure in social_structures:
+        for q in qs:
+            for i, p in enumerate(prop_committed):
+                for j, b in enumerate(betas):
+                    p = round(p, 2)
+                    b = round(b, 2)
+
+                    fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}_{ensemble_size}'
+                    if os.path.exists(f"outputs/{fname}.csv"):
+                            os.remove(f"outputs/{fname}.csv")
+            
         
 
 
