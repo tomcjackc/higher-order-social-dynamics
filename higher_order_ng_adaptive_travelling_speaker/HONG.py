@@ -236,11 +236,11 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-            if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i] == 0:
-                vocab_counts['AB'][i+2:] == np.zeros((runlength-i-1))
-                vocab_counts['A'][i+2:] == np.zeros((runlength-i-1))
-                vocab_counts['B'][i+2:] == np.ones((runlength-i-1))
-                break
+            # if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i] == 0:
+            #     vocab_counts['AB'][i+2:] == np.zeros((runlength-i-1))
+            #     vocab_counts['A'][i+2:] == np.zeros((runlength-i-1))
+            #     vocab_counts['B'][i+2:] == np.ones((runlength-i-1))
+            #     break
     
         return vocab_counts
 

@@ -29,14 +29,14 @@ import pandas as pd
 
 
 #%%
-prop_committed = 0.03
-betas = np.linspace(0, 1, 51)
+prop_committed = 0.08
+betas = [0.95]#np.linspace(0, 1, 51)
 ensemble_size = 10
 run_length = 10**6
-qs = [1, 0.5, 0]
-social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
+qs = [0]
+social_structures = ['InVS15']#['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-for social_structure in social_structures[3:]:
+for social_structure in social_structures:
     for q in qs:
         for beta in betas:
             run_ensemble_experiment(prop_committed, beta, beta, ensemble_size, run_length, social_structure, q)

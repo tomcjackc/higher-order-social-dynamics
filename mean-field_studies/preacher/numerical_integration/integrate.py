@@ -280,7 +280,16 @@ class system():
         
 
         self.pi_n = normalize(np.concatenate((np.array([self.pi_n[0]])+self.dpi_1_dt(),self.pi_n[1:-1]+self.dpi_n_dt(),np.array([self.pi_n[-1]])+self.dpi_N_dt())))
-
+        # print(f'This is f_A = {self.f_A[-1]}')
+        # print(f'This is f_B = {self.f_B[-1]}')
+        dpi_0_dt = self.dpi_1_dt()
+        dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
+        dpi_N_dt = self.dpi_N_dt()
+        # arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
+        # x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+        # y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+        # print(f'For n={np.argmax(arr)}, dpi_n={x}')
+        # print(f'For n={np.argmin(arr)}, dpi_n={y}')
         self.t += 1
     
     def integrate(self):
@@ -314,9 +323,9 @@ class system():
             #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
             self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
             print(t)
-            print(self.pi_n[:10])
-            #print(f'This is f_A = {f_A}')
-            #print(f'This is f_B = {f_B}')
+            #print(self.pi_n[:10])
+            # print(f'This is f_A = {f_A}')
+            # print(f'This is f_B = {f_B}')
             # print(f'This is f_AB = {f_AB}')
             
             df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
@@ -327,27 +336,27 @@ class system():
             dpi_0_dt = self.dpi_1_dt()
             dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
             dpi_N_dt = self.dpi_N_dt()
-            arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
-            x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-            y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-            print(f'For n={np.argmax(arr)}, dpi_n={x}')
-            print(f'For n={np.argmin(arr)}, dpi_n={y}')
+            # arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
+            # x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            # y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+            # print(f'For n={np.argmax(arr)}, dpi_n={x}')
+            # print(f'For n={np.argmin(arr)}, dpi_n={y}')
             #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
             return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
         
-        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False), rtol=1,atol=1, hmin=1 )
+        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
         self.res = res
         print(res.shape)
         self.scipy_f_A = res[:, 0]
         self.scipy_f_B = res[:, 1]
-        self.scipy_pi = res[::2*10**2, 2:]
+        self.scipy_pi = res[:, 2:]
         self.scipy_f_Bcom = np.full_like(res[:, 0], self.f_Bcom_init)
         self.scipy_f_AB = np.ones_like(res[:, 0])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
         self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
 
     def scipy_integrate_2(self):
         def func(t, f):
-            print(t)
+            #print(t)
             self.t = t
             f_A = f[0]
             f_B = f[1]
@@ -387,35 +396,11 @@ class system():
         self.scipy_f_A = self.res.y[0, :]
         print(self.scipy_f_A.shape)
         self.scipy_f_B = self.res.y[1, :]
-        self.scipy_pi = self.res.y[2:, ::2*10**2]
+        self.scipy_pi = self.res.y[2:, :]
         self.scipy_f_Bcom = np.full_like(self.res.y[0, :], self.f_Bcom_init)
         self.scipy_f_AB = np.ones_like(self.res.y[0, :])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
         self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
 
-
-'''timings
-
-N=100, beta=1, f_A_init=0.8, f_B_init=0.2, f_Bcom_init=0, gamma=2, t_max=1000:
-integrate = 36s
-scipy_integrate=5.6s
-
-
-scipy_integrate seems to be faster, even though it's not written brilliantly
-
-notes so far:
--   N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=5, t_max=10**5:
-    really interesting, seems to be on the edge/critical point of the phase diagram
-    also N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.7, t_max=10**5
-    and N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=4.67, t_max=10**5
-
-- using the new code (which just includes small correction terms as discussed), the critical point seems to have moved.
-    new interesting parameters:
-        N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.9, t_max=10**5, q=0, dist='binomial'
-        N=100, beta=0.4, f_A_init=0.92, f_B_init=0, f_Bcom_init=0.08, gamma=6.7, t_max=10**5, q=0, dist='poisson'
-    whether we use the poisson or binomial distributions seems to have a small but measurable effect on the dynamics
-'''
-
-#%%
 
 
 
@@ -425,9 +410,6 @@ def create_and_integrate(dist, beta, t_max, q, p):
     output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
     sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
     sys.scipy_integrate()
-    # f_A_star = sys.scipy_f_A[-1]
-    # f_B_star = sys.scipy_f_B[-1]+sys.scipy_f_Bcom[-1]
-    # f_AB_star = sys.scipy_f_AB[-1]
 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -436,17 +418,11 @@ def create_and_integrate(dist, beta, t_max, q, p):
         os.remove(f"aux_outputs/{output_fname}.csv")
     ###
 
-    # with open(f'outputs/{output_fname}.csv', 'a') as f:
-    #         write = csv.writer(f)
-    #         write.writerow(sys.scipy_f_A)
-    #         write.writerow(sys.scipy_f_B+sys.scipy_f_Bcom)
-    #         write.writerow(sys.scipy_f_AB)
-    
-    with open(f'outputs/{output_fname}.csv', 'a') as f:
-            write = csv.writer(f)
-            write.writerow(sys.scipy_f_A)
-            write.writerow(sys.scipy_f_B+sys.scipy_f_Bcom)
-            write.writerow(sys.scipy_f_AB)
+    arr = np.array([sys.scipy_f_A, sys.scipy_f_B+sys.scipy_f_Bcom, sys.scipy_f_AB]).T
+    df1 = pd.DataFrame(arr,index = np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False), columns = ['f_A', 'f_B', 'f_AB'])
+    df1.to_csv(f'outputs/{output_fname}.csv')
+    df2 = pd.DataFrame(sys.scipy_pi.T,index = range(1,sys.scipy_pi.shape[1]+1 ), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
+    df2.to_csv(f'outputs/edge_pdf_{output_fname}.csv')
 
 def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
     args = []
@@ -497,5 +473,15 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
             df.to_csv(f'finished_outputs/heatmap_int_A_res_{fname}.csv')
 
 
+if __name__ == '__main__':
 
-
+    betas = [0.16, 0.76]
+    ps = [0.03]
+    qs = [0]
+    social_structures = ['InVS15']
+    run_length = 10**5
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+    run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+    create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
