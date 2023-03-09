@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Thu Mar  9 15:05:07 2023
+
+@author: Marius
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Sat Dec  3 19:41:22 2022
 
 @author: Marius
@@ -48,7 +56,7 @@ def normalize(v):
 class system():
     def __init__(self, dist, beta, f_A_init, f_B_init, f_Bcom_init, t_max, q):
         self.t = 0
-
+        self.t_max = t_max
         self.q = q
         
         self.dist = dist
@@ -66,17 +74,12 @@ class system():
         self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
         self.pi_n = self.pi_n_init # this pi_n gets updated at each time step and forms the basis of the custom probability distribution in the pi function
         self.beta = beta
-        self.f_A_init = f_A_init
-        self.f_B_init = f_B_init
-        self.f_AB_init = 1-f_A_init-f_B_init-f_Bcom_init
-        self.f_Bcom_init = f_Bcom_init
         self.dist = dist
-        self.f_A = [f_A_init]
-        self.f_B = [f_B_init]
-        self.f_AB = [self.f_AB_init]
-        self.f_Bcom = [f_Bcom_init]
-
-        self.t_max = t_max
+        self.f_A = [f_A_init]+[0]*(self.t_max-1)
+        self.f_B = [f_B_init]+[0]*(self.t_max-1)
+        self.f_AB = [1-f_A_init-f_B_init-f_Bcom_init]+[0]*(self.t_max-1)
+        self.f_Bcom = [f_Bcom_init]*self.t_max
+        
         
 
     def magnetisation(self):
@@ -177,43 +180,43 @@ class system():
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k, n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))*(self.N/(self.N-i))
+            mult = mult*(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]-(i/self.N))*(self.N/(self.N-i))
         return mult
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
+            mult = mult*(self.f_A[self.t]+self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
         for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
+            mult = mult*(self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
         return mult
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
-        term2 = ((n-1)/n)*((self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))
+        term2 = ((n-1)/n)*((self.f_B[self.t]+0.5*self.f_AB[self.t]+self.f_Bcom[self.t])/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))
         return term1+term2
     
     def speaker_says_A_given_A_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
-        term2 = ((n-1)/n)*((self.f_A[-1]+0.5*self.f_AB[-1])/(self.f_A[-1]+self.f_AB[-1]))
+        term2 = ((n-1)/n)*((self.f_A[self.t]+0.5*self.f_AB[self.t])/(self.f_A[self.t]+self.f_AB[self.t]))
         return term1+term2
     
     def speaker_says_B_given_B_con_not_possible_lookingatA(self, n):
-        return ((n-1)/n)*(self.f_B[-1]+0.5*self.f_AB[-1]+self.f_Bcom[-1])
+        return ((n-1)/n)*(self.f_B[self.t]+0.5*self.f_AB[self.t]+self.f_Bcom[self.t])
 
     def speaker_says_A_given_A_con_not_possible_lookingatB(self, n):
-        return ((n-1)/n)*(self.f_A[-1]+0.5*self.f_AB[-1])
+        return ((n-1)/n)*(self.f_A[self.t]+0.5*self.f_AB[self.t])
 
     def df_A(self):
-        df_A = self.w_AAB()*self.f_AB[-1]-self.w_ABA()*self.f_A[-1]
+        df_A = self.w_AAB()*self.f_AB[self.t]-self.w_ABA()*self.f_A[self.t]
         return df_A
 
     def df_B(self):
-        df_B = self.w_BAB()*self.f_AB[-1]-self.w_ABB()*self.f_B[-1]
+        df_B = self.w_BAB()*self.f_AB[self.t]-self.w_ABB()*self.f_B[self.t]
         return df_B
     
     #structural dynamics
@@ -238,12 +241,12 @@ class system():
     
     def P_no_consensus(self, n):
         P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
-            (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))-\
+            (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
-            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]))*((n-1)/n)) - \
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) - \
             self.AB_consensus_poss(n,k=0)*(1-\
-            (self.f_AB[-1]*0.5/(self.f_B[-1]+self.f_AB[-1]-self.f_Bcom[-1]))*((n-1)/n)+\
-            (self.f_AB[-1]*0.5/(self.f_A[-1]+self.f_AB[-1]))*((n-1)/n))
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)+\
+            (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))
         
         return P
     
@@ -283,132 +286,20 @@ class system():
         self.f_A[t] = self.f_A[t-1]+df_A_dt
         self.f_B[t] = self.f_B[t-1]+df_B_dt
         
-        self.f_AB[t] = 1-self.f_A[t]-self.f_B[t]-self.f_Bcom_init       
+        self.f_AB[t] = 1-self.f_A[t]-self.f_B[t]-self.f_Bcom[t]       
         self.pi_n = normalize(self.pi_n + np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-        
+        self.pi_n_t[t] = self.pi_n
         
         print(t)
-        self.t += t
+        self.t = t
     
     def integrate(self):
-        self.f_A = self.f_A+[0]*(self.t_max-1)
-        self.f_B = self.f_B+[0]*(self.t_max-1)
-        self.f_AB = self.f_AB+[0]*(self.t_max-1)
-        self.f_Bcom = [self.f_Bcom_init]*self.t_max
+        self.pi_n_t = np.zeros((self.t_max, self.N))
+        self.pi_n_t[0] = self.pi_n
         
-        
-        for i in range(1, self.t_max):
-            self.int_1step(i)
+        for t in range(1, self.t_max):
+            self.int_1step(t)
     
-    def scipy_integrate(self):
-        def func(f, t):
-            #print(t)
-            self.t = t
-            f_A = f[0]
-            f_B = f[1]
-            f_Bcom = self.f_Bcom_init
-            f_AB = 1-f_A-f_B-f_Bcom
-
-
-            # these lines mean we have to use systems with >4 nodes (which we will anyway but this restricts it)
-            pi_0 = f[2]
-            pi_n = f[3:-1]
-            pi_N = f[-1]
-
-            
-           
-
-            print(t)
-            
-            
-            if t != 0:
-                self.f_A.append(f_A)
-                self.f_B.append(f_B)
-                self.f_Bcom.append(f_Bcom)
-                self.f_AB.append(f_AB)        
-                self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
-                            
-            # print(f'This is f_A = {f_A}')
-            # print(f'This is f_B = {f_B}')
-            # print(f'This is f_AB = {f_AB}')
-            
-            
-            
-            df_A_dt = self.df_A()
-            df_B_dt = self.df_B()
-
-            dpi_0_dt = self.dpi_1_dt()
-            dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
-            dpi_N_dt = self.dpi_N_dt()
-            
-
-            
-            
-            # arr = np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))
-            # x = max(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-            # y = min(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-            # print(f'For n={np.argmax(arr)}, dpi_n={x}')
-            # print(f'For n={np.argmin(arr)}, dpi_n={y}')
-            #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
-            return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
-        
-        res = sp.integrate.odeint(func, [self.f_A_init, self.f_B_init, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
-        self.res = res
-        print(res.shape)
-        self.scipy_f_A = res[:, 0]
-        self.scipy_f_B = res[:, 1]
-        self.scipy_pi = res[:, 2:]
-        self.scipy_f_Bcom = np.full_like(res[:, 0], self.f_Bcom_init)
-        self.scipy_f_AB = np.ones_like(res[:, 0])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
-        self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
-
-    def scipy_integrate_2(self):
-        def func(t, f):
-            #print(t)
-            self.t = t
-            f_A = f[0]
-            f_B = f[1]
-            f_Bcom = self.f_Bcom_init
-            f_AB = 1-f_A-f_B-f_Bcom
-
-
-            # these lines mean we have to use systems with >4 nodes (which we will anyway but this restricts it)
-            pi_0 = f[2]
-            pi_n = f[3:-1]
-            pi_N = f[-1]
-            # if f_A < 10**(-5):
-            #     f_A = 0
-            # if f_AB < 10**(-5):
-            #     f_AB = 0
-            
-        
-            self.f_A.append(f_A)
-            self.f_B.append(f_B)
-            self.f_Bcom.append(f_Bcom)
-            self.f_AB.append(f_AB)
-            #print(sum(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N])))))
-            self.pi_n = normalize(np.concatenate((np.array([pi_0]),pi_n,np.array([pi_N]))))
-            
-            df_A_dt = self.w_AAB()*f_AB-self.w_ABA()*f_A
-            df_B_dt = self.w_BAB()*f_AB-self.w_ABB()*f_B
-
-            dpi_0_dt = self.dpi_1_dt()
-            dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
-            dpi_N_dt = self.dpi_N_dt()
-            #print(np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt])))[:10])
-            return [df_A_dt, df_B_dt, dpi_0_dt, *dpi_n_dt, dpi_N_dt]
-        
-        res = sp.integrate.solve_ivp(func, (0, self.t_max), [self.f_A_init, self.f_B_init, *self.pi_n_init], t_eval=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False), min_step=1, method='LSODA', verbose=True)
-        self.res = res
-        print(self.res.y.shape)
-        self.scipy_f_A = self.res.y[0, :]
-        print(self.scipy_f_A.shape)
-        self.scipy_f_B = self.res.y[1, :]
-        self.scipy_pi = self.res.y[2:, :]
-        self.scipy_f_Bcom = np.full_like(self.res.y[0, :], self.f_Bcom_init)
-        self.scipy_f_AB = np.ones_like(self.res.y[0, :])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
-        self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
-
 
 
 
@@ -417,7 +308,7 @@ def create_and_integrate(dist, beta, t_max, q, p):
     print(f'beta={beta}, p={p}, q={q}\n')
     output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
     sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
-    sys.scipy_integrate()
+    sys.integrate()
 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -425,11 +316,12 @@ def create_and_integrate(dist, beta, t_max, q, p):
     if os.path.exists(f"aux_outputs/{output_fname}.csv"):
         os.remove(f"aux_outputs/{output_fname}.csv")
     ###
-
-    arr = np.array([sys.scipy_f_A, sys.scipy_f_B+sys.scipy_f_Bcom, sys.scipy_f_AB]).T
+    
+    arr = np.array([np.array(sys.f_A), np.array(sys.f_B)+np.array(sys.f_Bcom), np.array(sys.f_AB)]).T
+    
     df1 = pd.DataFrame(arr,index = np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False), columns = ['f_A', 'f_B', 'f_AB'])
     df1.to_csv(f'outputs/{output_fname}.csv')
-    df2 = pd.DataFrame(sys.scipy_pi.T,index = range(1,sys.scipy_pi.shape[1]+1 ), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
+    df2 = pd.DataFrame(sys.pi_n_t.T,index = range(1,sys.N +1), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
     df2.to_csv(f'outputs/edge_pdf_{output_fname}.csv')
 
 def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
@@ -482,16 +374,13 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-      #create_and_integrate('InVS15', 0.4, 10**3, 1, 0.03)
-      sys = system(dist='InVS15', beta=0.4, f_A_init=1-0.03, f_B_init=0, f_Bcom_init=0.03, t_max=10**3, q=1)
-      sys.integrate()
-#     betas = [0.16, 0.76]
-#     ps = [0.03]
-#     qs = [0]
-#     social_structures = ['InVS15']
-#     run_length = 10**5
-#     import warnings
-#     warnings.filterwarnings("ignore")
+    betas = [0.28, 0.4]
+    ps = [0.03]
+    qs = [1]
+    social_structures = ['InVS15']
+    run_length = 10**4
+    import warnings
+    warnings.filterwarnings("ignore")
     
-#     run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
-#     create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
+    run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+    create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
