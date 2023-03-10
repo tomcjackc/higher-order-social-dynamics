@@ -176,21 +176,27 @@ class system():
 
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        for i in range(k, n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1] >= (n-1)/self.N:
+            for i in range(k, n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_B[-1]+self.f_AB[-1]+self.f_Bcom[-1]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        return 0
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_A[-1]+self.f_AB[-1]>= (n-1)/self.N:
+            for i in range(k,n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_A[-1]+self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        return 0
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
-        for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_A[-1]+self.f_AB[-1]>= (n-1)/self.N:
+            for i in range(k,n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_AB[-1]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        return 0
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
@@ -483,8 +489,8 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 if __name__ == '__main__':
       #create_and_integrate('InVS15', 0.4, 10**3, 1, 0.03)
-      sys = system(dist='InVS15', beta=0.4, f_A_init=1-0.03, f_B_init=0, f_Bcom_init=0.03, t_max=10**3, q=1)
-      sys.integrate()
+      sys = system(dist='InVS15', beta=0.4, f_A_init=1-0.03, f_B_init=0, f_Bcom_init=0.03, t_max=10**4, q=1)
+      sys.scipy_integrate()
 #     betas = [0.16, 0.76]
 #     ps = [0.03]
 #     qs = [0]
