@@ -49,6 +49,17 @@ def get_edges_and_uniques(fname):
     return edges, unique_id
 
 
+def normalize_array(p, dp):
+    # Set all negative elements to 0
+    dp[-dp > p] = 0
+    
+    p = p+dp
+    # Normalize the array
+    norm_arr = p / sum(p)
+    
+    return norm_arr
+
+
 def normalize(v):
     return v / sum(v)
 
@@ -61,7 +72,7 @@ class system():
         
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
             self.N = self.dist[1]
@@ -98,7 +109,7 @@ class system():
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -106,7 +117,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -114,7 +125,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -122,7 +133,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
@@ -137,6 +148,12 @@ class system():
                     return 0
         else:
             return self.pi_n[n-1]
+        
+    def pi_prime(self, n):
+        sum = 0
+        for j in range(1, self.N+1):
+            sum += self.pi(j)*(self.N-j)
+        return self.pi(n)*(self.N-n)/sum
 
 
     # opinion dynamics
@@ -179,21 +196,31 @@ class system():
 
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        for i in range(k, n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t] >= (n-1)/self.N:
+            for i in range(k, n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        else:
+            return 0
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_A[self.t]+self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_A[self.t]+self.f_AB[self.t] >= (n-1)/self.N:
+            for i in range(k,n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_A[self.t]+self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        else:
+            return 0
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
-        for i in range(k,n): # this should do the product up to and including the i=n-1 term
-            mult = mult*(self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
-        return mult
+        if self.f_AB[self.t] >= (n-1)/self.N:
+            
+            for i in range(k,n): # this should do the product up to and including the i=n-1 term
+                mult = mult*(self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
+            return mult
+        else:
+            return 0
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
@@ -223,20 +250,20 @@ class system():
     def dpi_n_dt(self):
         # n is a list/array in this function
         norm_term = 1/self.no_edges
-        dpi_n_dt = norm_term*(self.w_nnm1()*self.pi(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n()*self.pi(self.trunc_possible_n))
+        dpi_n_dt = norm_term*(self.w_nnm1()*self.pi_prime(self.trunc_possible_n-1)+self.w_nnp1(self.trunc_possible_n)*self.pi(self.trunc_possible_n+1)-self.w_nm1n(self.trunc_possible_n)*self.pi(self.trunc_possible_n)-self.w_np1n()*self.pi_prime(self.trunc_possible_n))
         #print(self.pi(self.possible_n)[:5])
         return dpi_n_dt
     
     def dpi_1_dt(self):
         norm_term = 1/self.no_edges
-        dpi_1_dt = norm_term*(self.w_nnp1(1)*self.pi(2)-self.w_np1n()*self.pi(1))
+        dpi_1_dt = norm_term*(self.w_nnp1(1)*self.pi(2)-self.w_np1n()*self.pi_prime(1))
         #print(self.w_nnp1(1))
         return dpi_1_dt
     
     def dpi_N_dt(self):
         # n is a scalar in this function
         norm_term = 1/self.no_edges
-        dpi_N_dt = norm_term*(self.w_nnm1()*self.pi(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N))
+        dpi_N_dt = norm_term*(self.w_nnm1()*self.pi_prime(self.N-1)-self.w_nm1n(self.N)*self.pi(self.N))
         return dpi_N_dt
     
     def P_no_consensus(self, n):
@@ -287,7 +314,7 @@ class system():
         self.f_B[t] = self.f_B[t-1]+df_B_dt
         
         self.f_AB[t] = 1-self.f_A[t]-self.f_B[t]-self.f_Bcom[t]       
-        self.pi_n = normalize(self.pi_n + np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
+        self.pi_n = normalize_array(self.pi_n, np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
         self.pi_n_t[t] = self.pi_n
         
         print(t)
@@ -299,7 +326,7 @@ class system():
         
         for t in range(1, self.t_max):
             self.int_1step(t)
-    
+
 
 
 
@@ -374,9 +401,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-    betas = [0.28, 0.4]
+    betas = [0.16, 0.28, 0.4, 0.76]
     ps = [0.03]
-    qs = [1]
+    qs = [0, 1]
     social_structures = ['InVS15']
     run_length = 10**4
     import warnings
