@@ -225,25 +225,57 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         Returns:
             dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
-        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1))}
+        self.N = len(self.nodes.ids)
+        vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'edge_size_dist': np.zeros((runlength+1, self.N))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
         vocab_counts['AB'][0] = self.count_by_attr('vocab', ['A', 'B'], False)+self.count_by_attr('vocab', ['B', 'A'], False)
         
-        
+        vocab_counts['edge_size_dist'][0] = count_lists(self.edges.size.aslist(), self.N)
+        #print(vocab_counts['edge_size_dist'])
         for i in range(runlength):
             diff_dict = self.interact_and_advance(verbose=verbose)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
+            vocab_counts['edge_size_dist'][i+1] = count_lists(self.edges.size.aslist(), self.N)
             # if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i+1] == 0:
             #     vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
             #     vocab_counts['A'][i+2:] = np.zeros((runlength-i-1))
             #     vocab_counts['B'][i+2:] = np.ones((runlength-i-1))
             #     vocab_counts['time_to_consensus'] = i+1
             #     break
-        vocab_counts['time_to_consensus'] = vocab_counts.get('time_to_consensus', np.inf)
+        #vocab_counts['time_to_consensus'] = vocab_counts.get('time_to_consensus', np.inf)
         return vocab_counts
+
+def count_lists(lst, N):
+    '''
+    This function needs to be changed and made fast,
+    it all deoebds on lst format
+
+    Parameters
+    ----------
+    lst : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    d : TYPE
+        DESCRIPTION.
+
+    '''
+    d = np.zeros((N))
+    #print(N)
+    total_lists = len(lst)
+    for size in lst:
+        if size not in d:
+            d[size-1] = 1
+        else:
+            d[size-1] += 1
+    
+    d /= total_lists
+    return d
+
 
 
 def get_edges_and_uniques(fname):
@@ -263,6 +295,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
+    no_edges = len(edges[0])
+    
     output_fname = f'{social_structure}_{prop_committed}_{beta_non_committed}_{beta_committed}_q={q}_{run_length}_{ensemble_size}'
     
     ### This part deletes a file if it already exists
@@ -286,22 +320,19 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         
         H.add_edges_from(edges[0])
         
-        initial_size = H.edges.size.aslist()
+        
 
-        with open(f'outputs/{output_fname}.csv', 'a') as f:
+        with open(f'outputs/sim_{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = H.run(edges,run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
             
-        final_size = H.edges.size.aslist()
+        df2 = pd.DataFrame(np.array(stats['edge_size_dist']).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
+        df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')     
+                
         
-        with open(f'aux_outputs/{output_fname}.csv', 'a') as h:
-            write = csv.writer(h)
-            write.writerow(initial_size)
-            write.writerow(final_size)
-            h.close()
             
 def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_length, social_structures, qs, rule = 'Unanimous', thr = 3):
     args = []
@@ -403,13 +434,21 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                     fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}_{ensemble_size}'
                     if os.path.exists(f"outputs/{fname}.csv"):
                             os.remove(f"outputs/{fname}.csv")
-            
-        
+
+if __name__ == '__main__':
+    betas = [0.16, 0.28, 0.4, 0.76]
+    ps = [0.03]
+    qs = [0, 1]
+    social_structures = ['InVS15']
+    run_length = 10**6
+    ensamble_size =10
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+    run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
+    create_csvs_from_outputs(ps, betas, run_length, ensamble_size,social_structures, qs)
 
 
 
 
-<<<<<<< HEAD
-=======
 
->>>>>>> parent of eebdca0 (Merge branch 'main' of https://github.com/tomcjackc/higher-order-social-dynamics)
