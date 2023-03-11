@@ -305,6 +305,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     if os.path.exists(f"aux_outputs/{output_fname}.csv"):
         os.remove(f"aux_outputs/{output_fname}.csv")
     ###
+    
+
 
     for k in tqdm(range(ensemble_size)):
         H = HigherOrderNamingGame(rule=rule)
@@ -322,13 +324,14 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         
         
 
-        with open(f'outputs/sim_{output_fname}.csv', 'a') as f:
+        with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = H.run(edges,run_length, False)
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
             
+        #The code below needs changing to average over all edge sizes in all ensambles
         df2 = pd.DataFrame(np.array(stats['edge_size_dist']).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
         df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')     
                 
