@@ -349,7 +349,7 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
         # Use the pool to map the function to the arguments
         pool.starmap(run_ensemble_experiment, args)
         
-def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs, sample_size=5e4, choose=100):
+def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
     
     Bstar = np.zeros((len(betas), len(prop_committed)))
     Astar = np.zeros((len(betas), len(prop_committed)))
@@ -372,7 +372,7 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
                     
-                    A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length, sample_size=sample_size, m=choose)
+                    A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length)
                     
                     Bstar[j,i] = B_value
                     Astar[j,i] = A_value
@@ -452,5 +452,3 @@ if __name__ == '__main__':
 
 
 
-
-# %%

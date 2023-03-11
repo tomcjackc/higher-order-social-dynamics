@@ -471,9 +471,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
                     
-                    A_value = data[-1, 1]
-                    B_value = data[-1, 2]
-                    AB_value = data[-1, 3]
+                    A_value = data[0, -1]
+                    B_value = data[1, -1]
+                    AB_value = data[2, -1]
                     
                     Bstar[j,i] = B_value
                     Astar[j,i] = A_value
