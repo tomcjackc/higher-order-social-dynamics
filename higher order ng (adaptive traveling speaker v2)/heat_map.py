@@ -1,4 +1,3 @@
-#%%
 from enum import unique
 import importlib
 import xgi
@@ -18,14 +17,14 @@ import csv
 
 #mpl.style.use('report_style.mplstyle')
 
-prop_committed = np.linspace(0.01, 0.2, 5)
-betas = np.linspace(0.05, 1, 5)
-ensemble_size = 2
-run_length = 10**4
-qs = [0]
+prop_committed = [0.03]#np.linspace(0.01, 0.2, 20)
+betas = np.linspace(0, 1, 51)
+ensemble_size = 10
+run_length = 10**6
+qs = [1]
 social_structures = ['InVS15']#['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
-create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs, sample_size=100, choose=10)
+create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs)
 
         
 ###Uncoment the code below to generate the actual heatmap
@@ -35,4 +34,3 @@ create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, socia
 # plt.xlabel('p')
 # plt.ylabel(r'$\beta$')
 # plt.savefig(f'figures/{fname}.pdf')
-#%%
