@@ -239,6 +239,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
             vocab_counts['edge_size_dist'][i+1] = count_lists(self.edges.size.aslist(), self.N)
+        vocab_counts['final_n_connected'] = xgi.algorithms.connected.number_connected_components(self)
             # if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i+1] == 0:
             #     vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
             #     vocab_counts['A'][i+2:] = np.zeros((runlength-i-1))
@@ -304,6 +305,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         os.remove(f"outputs/{output_fname}.csv")
     if os.path.exists(f"aux_outputs/{output_fname}.csv"):
         os.remove(f"aux_outputs/{output_fname}.csv")
+    if os.path.exists(f'con_com_outputs/{output_fname}.csv'):
+        os.remove(f'con_com_outputs/{output_fname}.csv')
     ###
     
 
@@ -330,6 +333,10 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
+        with open(f'con_com_outputs/{output_fname}.csv', 'a') as g:
+            write = csv.writer(g)
+            write.writerow([stats['final_n_connected']])
+        
             
         #The code below needs changing to average over all edge sizes in all ensambles
         df2 = pd.DataFrame(np.array(stats['edge_size_dist']).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
@@ -352,7 +359,7 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
         # Use the pool to map the function to the arguments
         pool.starmap(run_ensemble_experiment, args)
         
-def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs):
+def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs, sample_size =5*10**4, m = 100):
     
     Bstar = np.zeros((len(betas), len(prop_committed)))
     Astar = np.zeros((len(betas), len(prop_committed)))
@@ -375,7 +382,7 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
                     
-                    A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length)
+                    A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length, sample_size, m)
                     
                     Bstar[j,i] = B_value
                     Astar[j,i] = A_value
@@ -384,7 +391,8 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     Bstar_75[j,i] = B_75
                     Astar_75[j,i] = A_75
                     
-                    print(p,b) 
+                    print(p,b)
+
             fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
             df = pd.DataFrame(Bstar, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_B_res_{fname}.csv')
@@ -439,19 +447,21 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                             os.remove(f"outputs/{fname}.csv")
 
 if __name__ == '__main__':
-    betas = [0.16, 0.28, 0.4, 0.76]
+    betas = [0.48]
     ps = [0.03]
-    qs = [0, 1]
+    qs = [1]
     social_structures = ['InVS15']
-    run_length = 10**6
-    ensamble_size =10
+    run_length = 10**5
+    ensamble_size = 5
     import warnings
     warnings.filterwarnings("ignore")
     
     run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
-    create_csvs_from_outputs(ps, betas, run_length, ensamble_size,social_structures, qs)
+    create_csvs_from_outputs(ps, betas, ensamble_size, run_length,social_structures, qs, sample_size=100, m=20)
 
 
 
 
 
+
+# %%
