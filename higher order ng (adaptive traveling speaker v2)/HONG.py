@@ -405,7 +405,10 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                             os.remove(f"outputs/{fname}.csv")
             
         
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of 23859f8 (Changes)
 
 
 
