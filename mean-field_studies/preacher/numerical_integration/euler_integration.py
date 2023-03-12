@@ -6,13 +6,7 @@ Created on Thu Mar  9 15:05:07 2023
 @author: Marius
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Dec  3 19:41:22 2022
 
-@author: Marius
-"""
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -52,7 +46,7 @@ def get_edges_and_uniques(fname):
 def normalize_array(p, dp):
     # Set all negative elements to 0
     dp[-dp > p] = 0
-    p[p<10**(-20)] = 0
+    #p[p<10**(-20)] = 0
     p = p+dp
     # Normalize the array
     norm_arr = p / sum(p)
@@ -401,11 +395,11 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-    betas = [0.16, 0.28, 0.4, 0.76]
+    betas = [0.16, 0.28, 0.36, 0.4, 0.76]
     ps = [0.03]
-    qs = [0, 1]
+    qs = [1]
     social_structures = ['InVS15']
-    run_length = 10**4
+    run_length = 10**5
     import warnings
     warnings.filterwarnings("ignore")
     
