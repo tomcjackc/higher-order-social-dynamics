@@ -79,7 +79,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
 
         test_stat = np.random.binomial(1, self.get_attr(speaker, 'beta'))
         test_stat_q = np.random.binomial(1, self.get_attr(speaker, 'q'))
-        
+        edge_size_change_index = False
         if self.rule == 'Unanimous':
             if all([broadcast in self.get_attr(i, 'vocab') for i in edge]):
                 # if verbose:
@@ -103,12 +103,16 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                 if test_stat_q:
                     #rewire
                     
-                    self.move_speaker(speaker, edge_id)
+                    edge_size_change_index = self.move_speaker(speaker, edge_id)
                             
                         
-                        
-        
-                        
+        d_edge_size_change = np.zeros((self.N))             
+        if edge_size_change_index != False:
+            d_edge_size_change[edge_size_change_index[0]-1] = -1/self.M
+            d_edge_size_change[edge_size_change_index[0]-2] = 1/self.M
+            d_edge_size_change[edge_size_change_index[1]-1] = -1/self.M
+            d_edge_size_change[edge_size_change_index[1]] = 1/self.M
+                               
         # if self.rule == 'Union':
         #     if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
         #          if test_stat:
@@ -142,7 +146,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             print(list(self.nodes.attrs))
             print()
             
-        return diff_dict
+        return diff_dict, d_edge_size_change
     def move_speaker(self, speaker_id, edge_id):
         """
         The func removes the speaker and adds it to a new edge 
@@ -165,9 +169,12 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         
         while new_edge_id in self.nodes.memberships(speaker_id):
             new_edge_id = rand.choice(self.edges)
+        a =  len(list(self.edges.members(edge_id)))
         self.remove_node_from_edge(edge_id, speaker_id)
+        b =  len(list(self.edges.members(new_edge_id)))
         self.add_node_to_edge(new_edge_id, speaker_id)
-        
+        #print([a, b])
+        return([a, b])
         
         
         
@@ -226,6 +233,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
             dict: dictionary containing a list of length=runlength for each possible vocabulary. shows the evolution of the number of agents with a given vocabulary over time.
         """
         self.N = len(self.nodes.ids)
+        self.M = len(self.edges.size.aslist())
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'edge_size_dist': np.zeros((runlength+1, self.N))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
@@ -234,11 +242,11 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         vocab_counts['edge_size_dist'][0] = count_lists(self.edges.size.aslist(), self.N)
         #print(vocab_counts['edge_size_dist'])
         for i in range(runlength):
-            diff_dict = self.interact_and_advance(verbose=verbose)
+            diff_dict, d_edge_size_change = self.interact_and_advance(verbose=verbose)
             vocab_counts['A'][i+1] = vocab_counts['A'][i] + diff_dict['A']
             vocab_counts['B'][i+1] = vocab_counts['B'][i] + diff_dict['B']
             vocab_counts['AB'][i+1] = vocab_counts['AB'][i] + diff_dict['AB']
-            vocab_counts['edge_size_dist'][i+1] = count_lists(self.edges.size.aslist(), self.N)
+            vocab_counts['edge_size_dist'][i+1] = vocab_counts['edge_size_dist'][i] + d_edge_size_change
         vocab_counts['final_n_connected'] = xgi.algorithms.connected.number_connected_components(self)
             # if vocab_counts['AB'][i+1] == 0 and vocab_counts['A'][i+1] == 0:
             #     vocab_counts['AB'][i+2:] = np.zeros((runlength-i-1))
@@ -265,15 +273,13 @@ def count_lists(lst, N):
         DESCRIPTION.
 
     '''
+
     d = np.zeros((N))
     #print(N)
     total_lists = len(lst)
     for size in lst:
-        if size not in d:
-            d[size-1] = 1
-        else:
             d[size-1] += 1
-    
+
     d /= total_lists
     return d
 
@@ -309,8 +315,8 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         os.remove(f'con_com_outputs/{output_fname}.csv')
     ###
     
-
-
+    edge_size = np.zeros((ensemble_size,run_length+1 ,len(unique_id)))
+    component_size = np.zeros((ensemble_size))
     for k in tqdm(range(ensemble_size)):
         H = HigherOrderNamingGame(rule=rule)
 
@@ -326,7 +332,7 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         H.add_edges_from(edges[0])
         
         
-
+        
         with open(f'outputs/{output_fname}.csv', 'a') as f:
             write = csv.writer(f)
             stats = H.run(edges,run_length, False)
@@ -336,11 +342,20 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         with open(f'con_com_outputs/{output_fname}.csv', 'a') as g:
             write = csv.writer(g)
             write.writerow([stats['final_n_connected']])
-        
-            
+        edge_size[k] = stats['edge_size_dist']
+        component_size[k] = stats['final_n_connected']
         #The code below needs changing to average over all edge sizes in all ensambles
-        df2 = pd.DataFrame(np.array(stats['edge_size_dist']).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
-        df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')     
+    df2 = pd.DataFrame( np.mean(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
+    df3 = pd.DataFrame( np.std(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
+    df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')
+    df3.to_csv(f'aux_outputs/sim_edge_std_{output_fname}.csv')       
+    
+    ### code below needs to be changed to component instead of edge
+    
+    df4 = pd.DataFrame( np.mean(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
+    df5 = pd.DataFrame( np.std(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
+    df4.to_csv(f'con_com_outputs/{output_fname}.csv')
+    df5.to_csv(f'con_com_outputs/{output_fname}.csv')       
                 
         
             
@@ -357,6 +372,7 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
    
     with multiprocessing.Pool() as pool:
         # Use the pool to map the function to the arguments
+        print(args)
         pool.starmap(run_ensemble_experiment, args)
         
 def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs, sample_size =5*10**4, m = 100):
@@ -447,12 +463,12 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                             os.remove(f"outputs/{fname}.csv")
 
 if __name__ == '__main__':
-    betas = [0.48]
+    betas = [0.16, 0.28, 0.36, 0.4, 0.76]
     ps = [0.03]
     qs = [1]
     social_structures = ['InVS15']
     run_length = 10**5
-    ensamble_size = 5
+    ensamble_size = 10
     import warnings
     warnings.filterwarnings("ignore")
     
