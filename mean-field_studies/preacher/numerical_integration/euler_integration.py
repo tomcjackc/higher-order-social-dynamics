@@ -52,7 +52,7 @@ def get_edges_and_uniques(fname):
 def normalize_array(p, dp):
     # Set all negative elements to 0
     dp[-dp > p] = 0
-    
+    p[p<10**(-20)] = 0
     p = p+dp
     # Normalize the array
     norm_arr = p / sum(p)

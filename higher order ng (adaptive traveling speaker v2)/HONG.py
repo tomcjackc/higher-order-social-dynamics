@@ -108,10 +108,11 @@ class HigherOrderNamingGame(xgi.Hypergraph):
                         
         d_edge_size_change = np.zeros((self.N))             
         if edge_size_change_index != False:
-            d_edge_size_change[edge_size_change_index[0]-1] = -1/self.M
-            d_edge_size_change[edge_size_change_index[0]-2] = 1/self.M
-            d_edge_size_change[edge_size_change_index[1]-1] = -1/self.M
-            d_edge_size_change[edge_size_change_index[1]] = 1/self.M
+            d_edge_size_change[edge_size_change_index[0]-1] += -1/self.M
+            d_edge_size_change[edge_size_change_index[0]-2] += 1/self.M
+            d_edge_size_change[edge_size_change_index[1]-1] += -1/self.M
+            d_edge_size_change[edge_size_change_index[1]] += 1/self.M
+            #print(d_edge_size_change[:20])
                                
         # if self.rule == 'Union':
         #     if sum([1 for i in edge if broadcast in self.get_attr(i, 'vocab')]) > 1:
@@ -234,6 +235,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         """
         self.N = len(self.nodes.ids)
         self.M = len(self.edges.size.aslist())
+        print(self.N)
+        print(self.M)
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'edge_size_dist': np.zeros((runlength+1, self.N))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
@@ -339,27 +342,29 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
             write.writerow(stats['A'])
             write.writerow(stats['B'])
             write.writerow(stats['AB'])
-        with open(f'con_com_outputs/{output_fname}.csv', 'a') as g:
-            write = csv.writer(g)
-            write.writerow([stats['final_n_connected']])
+        # with open(f'con_com_outputs/{output_fname}.csv', 'a') as g:
+        #     write = csv.writer(g)
+        #     write.writerow([stats['final_n_connected']])
         edge_size[k] = stats['edge_size_dist']
         component_size[k] = stats['final_n_connected']
-        #The code below needs changing to average over all edge sizes in all ensambles
+    
     df2 = pd.DataFrame( np.mean(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
     df3 = pd.DataFrame( np.std(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
     df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')
     df3.to_csv(f'aux_outputs/sim_edge_std_{output_fname}.csv')       
     
-    ### code below needs to be changed to component instead of edge
+   
     
-    df4 = pd.DataFrame( np.mean(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
-    df5 = pd.DataFrame( np.std(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
-    df4.to_csv(f'con_com_outputs/{output_fname}.csv')
-    df5.to_csv(f'con_com_outputs/{output_fname}.csv')       
+    df4 = pd.DataFrame( [np.mean(component_size)])
+    df5 = pd.DataFrame( [np.std(component_size)])
+    df4.to_csv(f'con_com_outputs/avg_{output_fname}.csv')
+    df5.to_csv(f'con_com_outputs/std_{output_fname}.csv')       
                 
         
             
 def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_length, social_structures, qs, rule = 'Unanimous', thr = 3):
+
+    
     args = []
     for social_structure in social_structures:
         for p in prop_committed:
@@ -383,6 +388,9 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
     Astar_25 = np.zeros((len(betas), len(prop_committed)))
     Bstar_75 = np.zeros((len(betas), len(prop_committed)))
     Astar_75 = np.zeros((len(betas), len(prop_committed)))
+    component_size_avg = np.zeros((len(betas), len(prop_committed)))
+    component_size_std = np.zeros((len(betas), len(prop_committed)))
+    
     
     for social_structure in social_structures:
         for q in qs:
@@ -397,6 +405,8 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     fname = f'{social_structure}_{p}_{b}_{b}_q={q}_{run_length}_{ensemble_size}'
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
+                    data2 = pd.read_csv(f'con_com_outputs/avg_{fname}.csv', index_col=0)
+                    data3 = pd.read_csv(f'con_com_outputs/std_{fname}.csv', index_col=0)
                     
                     A_value, A_25, A_75, B_value, B_25, B_75 = steady_state_preprocessing(data, run_length, sample_size, m)
                     
@@ -406,7 +416,8 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
                     Astar_25[j,i] = A_25
                     Bstar_75[j,i] = B_75
                     Astar_75[j,i] = A_75
-                    
+                    component_size_avg[j,i] = data2.iloc[0][0]
+                    component_size_std[j,i] = data3.iloc[0][0]
                     print(p,b)
 
             fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_{q}_{run_length}_{ensemble_size}'
@@ -422,6 +433,10 @@ def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, s
             df.to_csv(f'finished_outputs/heatmap_B75_res_{fname}.csv')
             df = pd.DataFrame(Astar_75, index = betas, columns = prop_committed)
             df.to_csv(f'finished_outputs/heatmap_A75_res_{fname}.csv')
+            df = pd.DataFrame(component_size_avg, index = betas, columns = prop_committed)
+            df.to_csv(f'finished_outputs/heatmap_components_avg_{fname}.csv')
+            df = pd.DataFrame(component_size_std, index = betas, columns = prop_committed)
+            df.to_csv(f'finished_outputs/heatmap_components_std_{fname}.csv')
     
 def steady_state_preprocessing(data, run_length, sample_size =5*10**4, m = 100):
                 A_data = data[0::3,:]
@@ -468,7 +483,7 @@ if __name__ == '__main__':
     qs = [1]
     social_structures = ['InVS15']
     run_length = 10**5
-    ensamble_size = 10
+    ensamble_size = 3
     import warnings
     warnings.filterwarnings("ignore")
     
