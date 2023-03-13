@@ -506,23 +506,21 @@ if __name__ == '__main__':
     ps = np.linspace(0.02, 0.2, num=10)
     qs = [0,1]
     social_structures = ['InVS15']
-<<<<<<< HEAD
+
     run_length = 10**5
     ensamble_size = 10
-=======
-    run_length = 10**4
-    ensamble_size = 1
+
 
     # global counter, total_ensemble_experiments
     # counter = 0
     # total_ensemble_experiments = len(betas)*len(ps)*len(qs)*len(social_structures)
->>>>>>> 659f326f61083a5c27423d43d5ef1ef28d7a4ff1
+
     import warnings
     warnings.filterwarnings("ignore")
     
     run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
     create_csvs_from_outputs(ps, betas, ensamble_size, run_length,social_structures, qs, sample_size=100, m=20)
-<<<<<<< HEAD
+
     # beta = 0.36
     # p = 0.03
     # q = 1
@@ -530,12 +528,11 @@ if __name__ == '__main__':
     # ensamble_size = 10
     # run_length = 10**5
     # run_ensemble_experiment(p , beta, beta, ensamble_size, run_length, social_structure, q, rule = 'Unanimous', thr =3 )
-=======
 
     # yag = yagmail.SMTP('icbad.updates99@gmail.com', 'wvliahqheajgzxzr')
     # yag.send('mi319@ic.ac.uk', 'job finished', f'hiya dude my job just finished :)\n\nyours automatically,\ntom')
 
->>>>>>> 659f326f61083a5c27423d43d5ef1ef28d7a4ff1
+
 
 
 
