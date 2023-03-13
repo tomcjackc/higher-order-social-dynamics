@@ -45,8 +45,8 @@ def get_edges_and_uniques(fname):
 
 def normalize_array(p, dp):
     # Set all negative elements to 0
-    dp[-dp > p] = 0
-    #p[p<10**(-20)] = 0
+    dp[p<10**(-20)] = 0
+    p[p<10**(-20)] = 0
     p = p+dp
     # Normalize the array
     norm_arr = p / sum(p)
@@ -66,7 +66,7 @@ class system():
         
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
-            edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{dist}.json')
+            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
             self.N = self.dist[1]
@@ -103,7 +103,7 @@ class system():
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -111,7 +111,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -119,7 +119,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -127,7 +127,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
@@ -334,8 +334,8 @@ def create_and_integrate(dist, beta, t_max, q, p):
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
         os.remove(f"outputs/{output_fname}.csv")
-    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
-        os.remove(f"aux_outputs/{output_fname}.csv")
+    if os.path.exists(f"outputs/edge_pdf_{output_fname}.csv"):
+        os.remove(f"outputs/edge_pdf_{output_fname}.csv")
     ###
     
     arr = np.array([np.array(sys.f_A), np.array(sys.f_B)+np.array(sys.f_Bcom), np.array(sys.f_AB)]).T
