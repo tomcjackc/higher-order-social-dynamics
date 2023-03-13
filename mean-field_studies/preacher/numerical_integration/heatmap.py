@@ -4,11 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
 
-betas = np.linspace(0, 1, num=5)
-ps = np.linspace(0, 0.2, num=5)
+betas = np.linspace(0.5, 1, num=2)
+ps = np.linspace(0.1, 0.2, num=2)
 qs = [0]
-social_structures = ['LyonSchool']
-run_length = 10**4
+social_structures = ['InVS15']
+run_length = 10**3
 
 for social_structure in social_structures:
     

@@ -1,3 +1,4 @@
+#%%
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -18,6 +19,7 @@ import multiprocessing
 import csv
 from numpy import genfromtxt
 import os
+from tqdm import tqdm
 
 def count_lists(lst):
     d = {}
@@ -66,7 +68,7 @@ class system():
         
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
-            edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{dist}.json')
+            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
             self.N = self.dist[1]
@@ -103,7 +105,7 @@ class system():
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -111,7 +113,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -119,7 +121,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -127,7 +129,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
@@ -311,14 +313,14 @@ class system():
         self.pi_n = normalize_array(self.pi_n, np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
         self.pi_n_t[t] = self.pi_n
         
-        print(t)
+        #print(t)
         self.t = t
     
     def integrate(self):
         self.pi_n_t = np.zeros((self.t_max, self.N))
         self.pi_n_t[0] = self.pi_n
         
-        for t in range(1, self.t_max):
+        for t in tqdm(range(1, self.t_max)):
             self.int_1step(t)
 
 
@@ -378,9 +380,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
                     
                     data = genfromtxt(f'outputs/{fname}.csv', delimiter=',')
                     
-                    A_value = data[0, -1]
-                    B_value = data[1, -1]
-                    AB_value = data[2, -1]
+                    A_value = data[-1, 1]
+                    B_value = data[-1, 2]
+                    AB_value = data[-1, 3]
                     
                     Bstar[j,i] = B_value
                     Astar[j,i] = A_value
@@ -395,9 +397,9 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-    betas = [0.16, 0.28, 0.36, 0.4, 0.76]
-    ps = [0.03]
-    qs = [1]
+    betas = np.linspace(0.1, 1, num=10)
+    ps = np.linspace(0.02, 0.2, num=10)
+    qs = [0,1]
     social_structures = ['InVS15']
     run_length = 10**5
     import warnings
@@ -405,3 +407,5 @@ if __name__ == '__main__':
     
     run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
     create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
+
+#%%

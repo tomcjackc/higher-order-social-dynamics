@@ -13,6 +13,8 @@ import os
 import multiprocessing
 from numpy import genfromtxt
 import pandas as pd
+# import yagmail 
+# from datetime import datetime
 
 #%%
 
@@ -22,6 +24,7 @@ class HigherOrderNamingGame(xgi.Hypergraph):
     def __init__(self, rule='Unanimous', incoming_data=None, **attr):
         xgi.Hypergraph.__init__(self, incoming_data, **attr)
         self.rule = rule
+        # self.yag = yagmail.SMTP('icbad.updates99@gmail.com', 'wvliahqheajgzxzr')
         
     def add_naming_game_node(self, list_nodes, vocab, committed=False, beta=1,q=0, meta=None):
         """Adds a set of identical naming game nodes, with defined vocabularies, levels of
@@ -235,8 +238,8 @@ class HigherOrderNamingGame(xgi.Hypergraph):
         """
         self.N = len(self.nodes.ids)
         self.M = len(self.edges.size.aslist())
-        print(self.N)
-        print(self.M)
+        #print(self.N)
+        #print(self.M)
         vocab_counts = {'A':np.zeros((runlength+1)), 'B':np.zeros((runlength+1)), 'AB':np.zeros((runlength+1)), 'edge_size_dist': np.zeros((runlength+1, self.N))}
         vocab_counts['A'][0] = self.count_by_attr('vocab', ['A'], False)
         vocab_counts['B'][0] = self.count_by_attr('vocab', ['B'], False)
@@ -301,7 +304,10 @@ def get_edges_and_uniques(fname):
 
 
 def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, ensemble_size, run_length, social_structure, q, rule, thr):
-    
+    # global counter, total_ensemble_experiments
+    # start_time = datetime.now()
+
+
     ### this line can be changed depending on which threshold we would like to use, 2 is our data, and data relating to other values come from https://github.com/iaciac/higher-order-NG
     edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr{thr}_{social_structure}.json')
     ###
@@ -358,11 +364,19 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     df4 = pd.DataFrame( [np.mean(component_size)])
     df5 = pd.DataFrame( [np.std(component_size)])
     df4.to_csv(f'con_com_outputs/avg_{output_fname}.csv')
-    df5.to_csv(f'con_com_outputs/std_{output_fname}.csv')       
-                
+    df5.to_csv(f'con_com_outputs/std_{output_fname}.csv')   
+
+
+    # end_time = datetime.now()
+    # time_taken = end_time-start_time
+    # counter += 1
+    # if counter % 3 == 0:
+    #     H.yag.send('tjc119@ic.ac.uk', 'status report', f'{counter*os.cpu_count()}/{total_ensemble_experiments} ensembles completed')
+               
         
             
 def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_length, social_structures, qs, rule = 'Unanimous', thr = 3):
+
 
     
     args = []
@@ -377,7 +391,7 @@ def run_multiprocessing_ensamble(prop_committed, betas, ensemble_size, run_lengt
    
     with multiprocessing.Pool() as pool:
         # Use the pool to map the function to the arguments
-        print(args)
+        # print(args)
         pool.starmap(run_ensemble_experiment, args)
         
 def create_csvs_from_outputs(prop_committed, betas, ensemble_size, run_length, social_structures, qs, sample_size =5*10**4, m = 100):
@@ -478,18 +492,24 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                             os.remove(f"outputs/{fname}.csv")
 
 if __name__ == '__main__':
-    betas = [0.16, 0.28, 0.36, 0.4, 0.76]
-    ps = [0.03]
-    qs = [1]
+    betas = np.linspace(0.1, 1, num=10)
+    ps = np.linspace(0.02, 0.2, num=10)
+    qs = [0,1]
     social_structures = ['InVS15']
-    run_length = 10**5
-    ensamble_size = 3
+    run_length = 10**4
+    ensamble_size = 1
+
+    # global counter, total_ensemble_experiments
+    # counter = 0
+    # total_ensemble_experiments = len(betas)*len(ps)*len(qs)*len(social_structures)
     import warnings
     warnings.filterwarnings("ignore")
     
     run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
     create_csvs_from_outputs(ps, betas, ensamble_size, run_length,social_structures, qs, sample_size=100, m=20)
 
+    # yag = yagmail.SMTP('icbad.updates99@gmail.com', 'wvliahqheajgzxzr')
+    # yag.send('mi319@ic.ac.uk', 'job finished', f'hiya dude my job just finished :)\n\nyours automatically,\ntom')
 
 
 
