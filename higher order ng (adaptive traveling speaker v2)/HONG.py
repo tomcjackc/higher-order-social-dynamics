@@ -491,6 +491,8 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
                     if os.path.exists(f"outputs/{fname}.csv"):
                             os.remove(f"outputs/{fname}.csv")
 
+
+
 if __name__ == '__main__':
     betas = np.linspace(0.1, 1, num=10)
     ps = np.linspace(0.02, 0.2, num=10)
