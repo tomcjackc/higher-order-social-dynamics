@@ -1,4 +1,10 @@
-#%%
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  9 15:05:07 2023
+
+@author: Marius
+"""
 
 from enum import unique
 import xgi
@@ -318,10 +324,14 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
         os.remove(f"outputs/{output_fname}.csv")
-    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
-        os.remove(f"aux_outputs/{output_fname}.csv")
-    if os.path.exists(f'con_com_outputs/{output_fname}.csv'):
-        os.remove(f'con_com_outputs/{output_fname}.csv')
+    if os.path.exists(f"aux_outputs/sim_edge_pdf_{output_fname}.csv"):
+        os.remove(f"aux_outputs/sim_edge_pdf_{output_fname}.csv")
+    if os.path.exists(f"aux_outputs/sim_edge_std_{output_fname}.csv"):
+        os.remove(f"aux_outputs/sim_edge_std_{output_fname}.csv")
+    if os.path.exists(f'con_com_outputs/avg_{output_fname}.csv'):
+        os.remove(f'con_com_outputs/avg_{output_fname}.csv')
+    if os.path.exists(f'con_com_outputs/std_{output_fname}.csv'):
+        os.remove(f'con_com_outputs/std_{output_fname}.csv')
     ###
     
     edge_size = np.zeros((ensemble_size,run_length+1 ,len(unique_id)))
@@ -498,20 +508,32 @@ if __name__ == '__main__':
     ps = np.linspace(0.02, 0.2, num=10)
     qs = [0,1]
     social_structures = ['InVS15']
-    run_length = 10**4
-    ensamble_size = 1
+
+    run_length = 10**5
+    ensamble_size = 10
+
 
     # global counter, total_ensemble_experiments
     # counter = 0
     # total_ensemble_experiments = len(betas)*len(ps)*len(qs)*len(social_structures)
+
     import warnings
     warnings.filterwarnings("ignore")
     
     run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
     create_csvs_from_outputs(ps, betas, ensamble_size, run_length,social_structures, qs, sample_size=100, m=20)
 
+    # beta = 0.36
+    # p = 0.03
+    # q = 1
+    # social_structure = 'InVS15'
+    # ensamble_size = 10
+    # run_length = 10**5
+    # run_ensemble_experiment(p , beta, beta, ensamble_size, run_length, social_structure, q, rule = 'Unanimous', thr =3 )
+
     # yag = yagmail.SMTP('icbad.updates99@gmail.com', 'wvliahqheajgzxzr')
     # yag.send('mi319@ic.ac.uk', 'job finished', f'hiya dude my job just finished :)\n\nyours automatically,\ntom')
+
 
 
 

@@ -47,8 +47,8 @@ def get_edges_and_uniques(fname):
 
 def normalize_array(p, dp):
     # Set all negative elements to 0
-    dp[-dp > p] = 0
-    #p[p<10**(-20)] = 0
+    dp[p<10**(-20)] = 0
+    p[p<10**(-20)] = 0
     p = p+dp
     # Normalize the array
     norm_arr = p / sum(p)
@@ -336,8 +336,8 @@ def create_and_integrate(dist, beta, t_max, q, p):
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
         os.remove(f"outputs/{output_fname}.csv")
-    if os.path.exists(f"aux_outputs/{output_fname}.csv"):
-        os.remove(f"aux_outputs/{output_fname}.csv")
+    if os.path.exists(f"outputs/edge_pdf_{output_fname}.csv"):
+        os.remove(f"outputs/edge_pdf_{output_fname}.csv")
     ###
     
     arr = np.array([np.array(sys.f_A), np.array(sys.f_B)+np.array(sys.f_Bcom), np.array(sys.f_AB)]).T
