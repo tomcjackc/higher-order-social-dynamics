@@ -269,11 +269,12 @@ class system():
         P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
             (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) - \
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) + \
             self.AB_consensus_poss(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)+\
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)-\
             (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))
-        
+        if P < 0:
+            P = 0
         return P
     
     def w_nnm1(self):
