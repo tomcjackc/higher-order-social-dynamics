@@ -47,9 +47,10 @@ def get_edges_and_uniques(fname):
 
 def normalize_array(p, dp):
     # Set all negative elements to 0
-    dp[p<10**(-20)] = 0
-    p[p<10**(-20)] = 0
+    #dp[p<10**(-20)] = 0
+   
     p = p+dp
+    p[p<10**(-20)] = 0
     # Normalize the array
     norm_arr = p / sum(p)
     
@@ -68,7 +69,7 @@ class system():
         
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
-            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
+            edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
             self.N = self.dist[1]
@@ -105,7 +106,7 @@ class system():
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -113,7 +114,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -121,7 +122,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -129,7 +130,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
@@ -266,11 +267,12 @@ class system():
         P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
             (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) - \
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) + \
             self.AB_consensus_poss(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)+\
+            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)-\
             (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))
-        
+        if P < 0:
+            P = 0
         return P
     
     def w_nnm1(self):
@@ -312,14 +314,15 @@ class system():
         self.f_AB[t] = 1-self.f_A[t]-self.f_B[t]-self.f_Bcom[t]       
         self.pi_n = normalize_array(self.pi_n, np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
         self.pi_n_t[t] = self.pi_n
-        
+        #self.P_no_consensus_list[t] =  np.array([self.P_no_consensus(j) for j in range(1, self.N+1)])
         #print(t)
         self.t = t
     
     def integrate(self):
         self.pi_n_t = np.zeros((self.t_max, self.N))
         self.pi_n_t[0] = self.pi_n
-        
+        #self.P_no_consensus_list = np.zeros((self.t_max, self.N))
+        #self.P_no_consensus_list[0] =  np.array([self.P_no_consensus(j) for j in range(1, self.N+1)])
         for t in tqdm(range(1, self.t_max)):
             self.int_1step(t)
 
@@ -346,6 +349,8 @@ def create_and_integrate(dist, beta, t_max, q, p):
     df1.to_csv(f'outputs/{output_fname}.csv')
     df2 = pd.DataFrame(sys.pi_n_t.T,index = range(1,sys.N +1), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
     df2.to_csv(f'outputs/edge_pdf_{output_fname}.csv')
+    # df3 = pd.DataFrame(sys.P_no_consensus_list.T,index = range(1,sys.N +1), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
+    # df3.to_csv(f'outputs/P_no_consensus_{output_fname}.csv')
 
 def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
     args = []
@@ -397,11 +402,11 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-    betas = np.linspace(0.1, 1, num=10)
-    ps = np.linspace(0.02, 0.2, num=10)
-    qs = [0,1]
+    betas = [0.16, 0.28, 0.36, 0.4, 0.76]#np.linspace(0.1, 1, num=10)
+    ps = [0.03]#np.linspace(0.02, 0.2, num=10)
+    qs = [1]
     social_structures = ['InVS15']
-    run_length = 10**5
+    run_length = 10**4
     import warnings
     warnings.filterwarnings("ignore")
     
