@@ -1,12 +1,4 @@
 #%%
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar  9 15:05:07 2023
-
-@author: Marius
-"""
-
 
 import numpy as np
 import scipy as sp
@@ -61,13 +53,11 @@ def normalize(v):
 
 
 class system():
-    def __init__(self, dist, beta, f_A_init, f_B_init, f_Bcom_init, t_max, q):
+    def __init__(self, dist, beta, f_Bcom_init, t_max, q):
         self.t = 0
         self.t_max = t_max
         self.q = q
-        self.f_Bcom_init = f_Bcom_init
-        self.f_A_init = f_A_init
-        self.f_B_init = f_B_init
+        self.f_Bcom = f_Bcom_init
 
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
@@ -81,14 +71,9 @@ class system():
             
         self.possible_n = np.linspace(1, self.N, num=self.N, endpoint=True, dtype=int)
         self.trunc_possible_n = self.possible_n[1:-1]
-        self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
-        self.pi_n = self.pi_n_init # this pi_n gets updated at each time step and forms the basis of the custom probability distribution in the pi function
         self.beta = beta
-        self.dist = dist
-        self.f_A = [f_A_init]+[0]*(self.t_max-1)
-        self.f_B = [f_B_init]+[0]*(self.t_max-1)
-        self.f_AB = [1-f_A_init-f_B_init-f_Bcom_init]+[0]*(self.t_max-1)
-        self.f_Bcom = [f_Bcom_init]*self.t_max
+
+        self.pi_n_init = np.array([self.pi(n) for n in self.possible_n])
         
         
 
@@ -165,7 +150,6 @@ class system():
     def w_AAB(self):
         sum = 0
         for n in range(1, self.N+1):
-            
             sum += self.g(n)*self.pi(n)*self.w_AAB_n(n)
         return sum
     
@@ -195,54 +179,54 @@ class system():
 
     def B_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        if self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t] >= (n-1)/self.N:
+        if self.f_B+self.f_AB+self.f_Bcom >= (n-1)/self.N:
             for i in range(k, n): # this should do the product up to and including the i=n-1 term
-                mult = mult*(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]-(i/self.N))*(self.N/(self.N-i))
+                mult = mult*(self.f_B+self.f_AB+self.f_Bcom-(i/self.N))*(self.N/(self.N-i))
             return mult
         else:
             return 0
 
     def A_consensus_poss_lookingatAB(self, n, k = 0):
         mult = 1
-        if self.f_A[self.t]+self.f_AB[self.t] >= (n-1)/self.N:
+        if self.f_A+self.f_AB >= (n-1)/self.N:
             for i in range(k,n): # this should do the product up to and including the i=n-1 term
-                mult = mult*(self.f_A[self.t]+self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
+                mult = mult*(self.f_A+self.f_AB-(i/self.N))*(self.N/(self.N-i))
             return mult
         else:
             return 0
     
     def AB_consensus_poss(self, n, k = 0): #where both A and B consensuses are possible (ie all nodes are AB)
         mult = 1
-        if self.f_AB[self.t] >= (n-1)/self.N:
+        if self.f_AB >= (n-1)/self.N:
             
             for i in range(k,n): # this should do the product up to and including the i=n-1 term
-                mult = mult*(self.f_AB[self.t]-(i/self.N))*(self.N/(self.N-i))
+                mult = mult*(self.f_AB-(i/self.N))*(self.N/(self.N-i))
             return mult
         else:
             return 0
     
     def speaker_says_B_given_B_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
-        term2 = ((n-1)/n)*((self.f_B[self.t]+0.5*self.f_AB[self.t]+self.f_Bcom[self.t])/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))
+        term2 = ((n-1)/n)*((self.f_B+0.5*self.f_AB+self.f_Bcom)/(self.f_B+self.f_AB+self.f_Bcom))
         return term1+term2
     
     def speaker_says_A_given_A_con_poss_lookingatAB(self, n):
         term1 = 1/(2*n)
-        term2 = ((n-1)/n)*((self.f_A[self.t]+0.5*self.f_AB[self.t])/(self.f_A[self.t]+self.f_AB[self.t]))
+        term2 = ((n-1)/n)*((self.f_A+0.5*self.f_AB)/(self.f_A+self.f_AB))
         return term1+term2
     
     def speaker_says_B_given_B_con_not_possible_lookingatA(self, n):
-        return ((n-1)/n)*(self.f_B[self.t]+0.5*self.f_AB[self.t]+self.f_Bcom[self.t])
+        return ((n-1)/n)*(self.f_B+0.5*self.f_AB+self.f_Bcom)
 
     def speaker_says_A_given_A_con_not_possible_lookingatB(self, n):
-        return ((n-1)/n)*(self.f_A[self.t]+0.5*self.f_AB[self.t])
+        return ((n-1)/n)*(self.f_A+0.5*self.f_AB)
 
     def df_A(self):
-        df_A = self.w_AAB()*self.f_AB[self.t]-self.w_ABA()*self.f_A[self.t]
+        df_A = self.w_AAB()*self.f_AB-self.w_ABA()*self.f_A
         return df_A
 
     def df_B(self):
-        df_B = self.w_BAB()*self.f_AB[self.t]-self.w_ABB()*self.f_B[self.t]
+        df_B = self.w_BAB()*self.f_AB-self.w_ABB()*self.f_B
         return df_B
     
     #structural dynamics
@@ -267,12 +251,12 @@ class system():
     
     def P_no_consensus(self, n):
         P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))-\
+            (self.f_AB*0.5/(self.f_A+self.f_AB))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]+self.f_Bcom[self.t]))*((n-1)/n)) - \
+            (self.f_AB*0.5/(self.f_B+self.f_AB+self.f_Bcom))*((n-1)/n)) - \
             self.AB_consensus_poss(n,k=0)*(1-\
-            (self.f_AB[self.t]*0.5/(self.f_B[self.t]+self.f_AB[self.t]-self.f_Bcom[self.t]))*((n-1)/n)+\
-            (self.f_AB[self.t]*0.5/(self.f_A[self.t]+self.f_AB[self.t]))*((n-1)/n))
+            (self.f_AB*0.5/(self.f_B+self.f_AB-self.f_Bcom))*((n-1)/n)+\
+            (self.f_AB*0.5/(self.f_A+self.f_AB))*((n-1)/n))
         
         return P
     
@@ -300,31 +284,56 @@ class system():
         return sum*self.q
     
     # integrating functions
-    def int_1step(self, t):
+    def scipy_integrate(self):
+        def func(arr, t):
+            print(t)
+            self.t = t
+            self.f_A = arr[0]
+            self.f_B = arr[1]
+            self.f_AB = 1-self.f_A-self.f_B-self.f_Bcom
+            
+            pi_1 = arr[2]
+            pi_n = arr[3:-1]
+            pi_N = arr[-1]
+            self.pi_n = np.concatenate((np.array([pi_1]),pi_n,np.array([pi_N])))
+            if t == 0:
+                print(f'initial pi_n = {self.pi_n[:20]}')
+            self.pi_n[self.pi_n < 1e-8] = 0
+            self.pi_n = normalize(self.pi_n)
 
-        df_A_dt = self.df_A()
-        df_B_dt = self.df_B()
 
-        dpi_0_dt = self.dpi_1_dt()
-        dpi_n_dt = self.dpi_n_dt() #this term will be a list/array
-        dpi_N_dt = self.dpi_N_dt()
-        
-        self.f_A[t] = self.f_A[t-1]+df_A_dt
-        self.f_B[t] = self.f_B[t-1]+df_B_dt
-        
-        self.f_AB[t] = 1-self.f_A[t]-self.f_B[t]-self.f_Bcom[t]       
-        self.pi_n = normalize_array(self.pi_n, np.concatenate((np.array([dpi_0_dt]),dpi_n_dt,np.array([dpi_N_dt]))))
-        self.pi_n_t[t] = self.pi_n
-        
-        #print(t)
-        self.t = t
-    
-    def integrate(self):
-        self.pi_n_t = np.zeros((self.t_max, self.N))
-        self.pi_n_t[0] = self.pi_n
-        
-        for t in tqdm(range(1, self.t_max)):
-            self.int_1step(t)
+            df_A = self.df_A()
+            df_B = self.df_B()
+
+            dpi_1 = self.dpi_1_dt()
+            if dpi_1 < 1e-8:
+                dpi_1 = 0
+            dpi_n = self.dpi_n_dt()
+            dpi_n[dpi_n < 1e-8] = 0
+            dpi_N = self.dpi_N_dt()
+            if dpi_N < 1e-8:
+                dpi_N = 0
+            
+            dpi_all_n = np.concatenate((np.array([dpi_1]),dpi_n,np.array([dpi_N])))
+
+            print(f'df_A = {df_A}')
+            print(f'df_B = {df_B}')
+
+            print(f'dpi_n = {dpi_all_n[:20]}')
+            print(f'sum of dpi_n = {sum(dpi_all_n)}')
+
+            return [df_A, df_B, *dpi_all_n]
+
+        res = sp.integrate.odeint(func, [1-self.f_Bcom, 0, *self.pi_n_init], t=np.linspace(0, self.t_max, num=self.t_max, dtype=int, endpoint=False))
+
+        self.scipy_f_A = res[:, 0]
+        self.scipy_f_B = res[:, 1]
+        self.scipy_pi = res[:, 2:]
+        self.scipy_f_Bcom = np.full_like(res[:, 0], self.f_Bcom)
+        self.scipy_f_AB = np.ones_like(res[:, 0])-self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
+        self.scipy_M = self.scipy_f_A-self.scipy_f_B-self.scipy_f_Bcom
+
+        return
 
     
 
@@ -332,8 +341,8 @@ class system():
 def create_and_integrate(dist, beta, t_max, q, p):
     print(f'beta={beta}, p={p}, q={q}\n')
     output_fname = f'{dist}_{p}_{beta}_{beta}_q={q}_{t_max}'
-    sys = system(dist=dist, beta=beta, f_A_init=1-p, f_B_init=0, f_Bcom_init=p, t_max=t_max, q=q)
-    sys.integrate()
+    sys = system(dist=dist, beta=beta, f_Bcom_init=p, t_max=t_max, q=q)
+    sys.scipy_integrate()
 
     ### This part deletes a file if it already exists
     if os.path.exists(f"outputs/{output_fname}.csv"):
@@ -342,11 +351,11 @@ def create_and_integrate(dist, beta, t_max, q, p):
         os.remove(f"outputs/edge_pdf_{output_fname}.csv")
     ###
     
-    arr = np.array([np.array(sys.f_A), np.array(sys.f_B)+np.array(sys.f_Bcom), np.array(sys.f_AB)]).T
+    arr = np.array([np.array(sys.scipy_f_A), np.array(sys.scipy_f_B)+np.array(sys.scipy_f_Bcom), np.array(sys.scipy_f_AB)]).T
     
     df1 = pd.DataFrame(arr,index = np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False), columns = ['f_A', 'f_B', 'f_AB'])
     df1.to_csv(f'outputs/{output_fname}.csv')
-    df2 = pd.DataFrame(sys.pi_n_t.T,index = range(1,sys.N +1), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
+    df2 = pd.DataFrame(sys.scipy_pi.T,index = range(1,sys.N +1), columns =np.linspace(0, t_max, num=t_max, dtype=int, endpoint=False))
     df2.to_csv(f'outputs/edge_pdf_{output_fname}.csv')
 
 def run_multiprocessing_ensemble(prop_committed, betas, run_length, social_structures, qs):
@@ -403,7 +412,7 @@ if __name__ == '__main__':
     ps = np.linspace(0.02, 0.2, num=1)
     qs = [1]
     social_structures = ['InVS15']
-    run_length = 10**3
+    run_length = 10**2
     import warnings
     warnings.filterwarnings("ignore")
     
