@@ -1,3 +1,4 @@
+#%%
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -363,7 +364,27 @@ def run_ensemble_experiment(prop_committed, beta_non_committed, beta_committed, 
         #     write.writerow([stats['final_n_connected']])
         edge_size[k] = stats['edge_size_dist']
         component_size[k] = stats['final_n_connected']
-    
+        # if 1:
+        #     vocab_list = [H.get_attr(i, 'vocab') for i in H.nodes]
+        #     colour_list = []
+        #     for i in vocab_list:
+        #         if i == ['A']:
+        #             colour_list.append('tab:blue')
+        #         elif i == ['A', 'B'] or i == ['B', 'A']:
+        #             colour_list.append('w')
+        #         elif i == ['B']:
+        #             colour_list.append('tab:orange')
+        #     print(colour_list)
+        #     # plt.figure()
+        #     # xgi.drawing.xgi_pylab.draw(H, pos=xgi.drawing.layout.pairwise_spring_layout(H))
+        #     # plt.show()
+        #     # plt.figure()
+        #     # xgi.drawing.xgi_pylab.draw(H)
+        #     # plt.show()
+        #     plt.figure()
+        #     xgi.drawing.xgi_pylab.draw(H, pos=xgi.drawing.layout.weighted_barycenter_spring_layout(H), node_fc=colour_list, max_order=0)
+        #     plt.savefig(f'pretty_{output_fname}.pdf')
+        #     plt.show()
     df2 = pd.DataFrame( np.mean(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
     df3 = pd.DataFrame( np.std(edge_size, axis = 0).T,index = range(1,len(unique_id) +1), columns =range(run_length+1))
     df2.to_csv(f'aux_outputs/sim_edge_pdf_{output_fname}.csv')
@@ -504,13 +525,12 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
 
 
 if __name__ == '__main__':
-    betas = np.linspace(0.1, 1, num=10)
-    ps = np.linspace(0.02, 0.2, num=10)
-    qs = [0,1]
-    social_structures = ['InVS15']
-
-    run_length = 10**5
+    ps = [0.03]
+    betas = [0.38]
     ensamble_size = 10
+    run_length = int(2e5)
+    qs = [1]
+    social_structures = ['InVS15']
 
 
     # global counter, total_ensemble_experiments
@@ -520,7 +540,9 @@ if __name__ == '__main__':
     import warnings
     warnings.filterwarnings("ignore")
     
+    
     run_multiprocessing_ensamble(ps, betas, ensamble_size, run_length, social_structures, qs)
+    print('data produced')
     create_csvs_from_outputs(ps, betas, ensamble_size, run_length,social_structures, qs, sample_size=100, m=20)
 
     # beta = 0.36
