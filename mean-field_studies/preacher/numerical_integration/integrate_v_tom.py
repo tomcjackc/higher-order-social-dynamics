@@ -39,12 +39,12 @@ def get_edges_and_uniques(fname):
 
 def normalize_array(p, dp):
     # Set all negative elements to 0
-    dp[p<10**(-20)] = 0
-    p[p<10**(-20)] = 0
+    
+    
     p = p+dp
     # Normalize the array
     norm_arr = p / sum(p)
-    
+    p[p<10**(-300)] = 0
     return norm_arr
 
 
@@ -253,11 +253,12 @@ class system():
         P = 1- self.A_consensus_poss_lookingatAB(n, k=0)*(1-\
             (self.f_AB*0.5/(self.f_A+self.f_AB))*((n-1)/n))-\
             self.B_consensus_poss_lookingatAB(n,k=0)*(1-\
-            (self.f_AB*0.5/(self.f_B+self.f_AB+self.f_Bcom))*((n-1)/n)) - \
+            (self.f_AB*0.5/(self.f_B+self.f_AB+self.f_Bcom))*((n-1)/n)) + \
             self.AB_consensus_poss(n,k=0)*(1-\
-            (self.f_AB*0.5/(self.f_B+self.f_AB-self.f_Bcom))*((n-1)/n)+\
+            (self.f_AB*0.5/(self.f_B+self.f_AB-self.f_Bcom))*((n-1)/n)-\
             (self.f_AB*0.5/(self.f_A+self.f_AB))*((n-1)/n))
-        
+        if P<0:
+            P=0
         return P
     
     def w_nnm1(self):
@@ -296,8 +297,8 @@ class system():
             pi_n = arr[3:-1]
             pi_N = arr[-1]
             self.pi_n = np.concatenate((np.array([pi_1]),pi_n,np.array([pi_N])))
-            if t == 0:
-                print(f'initial pi_n = {self.pi_n[:20]}')
+            # if t == 0:
+                # print(f'initial pi_n = {self.pi_n[:20]}')
             self.pi_n[self.pi_n < 1e-8] = 0
             self.pi_n = normalize(self.pi_n)
 
@@ -316,11 +317,11 @@ class system():
             
             dpi_all_n = np.concatenate((np.array([dpi_1]),dpi_n,np.array([dpi_N])))
 
-            print(f'df_A = {df_A}')
-            print(f'df_B = {df_B}')
+            # print(f'df_A = {df_A}')
+            # print(f'df_B = {df_B}')
 
-            print(f'dpi_n = {dpi_all_n[:20]}')
-            print(f'sum of dpi_n = {sum(dpi_all_n)}')
+            # print(f'dpi_n = {dpi_all_n[:20]}')
+            # print(f'sum of dpi_n = {sum(dpi_all_n)}')
 
             return [df_A, df_B, *dpi_all_n]
 
@@ -398,7 +399,7 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
                     Bstar[j,i] = B_value
                     Astar[j,i] = A_value
                     
-                    print(p,b) 
+                    # print(p,b) 
             
             fname = f'{len(prop_committed)}x{len(betas)}_{social_structure}_q={q}_{run_length}'
             df = pd.DataFrame(Bstar, index = betas, columns = prop_committed)
@@ -408,15 +409,31 @@ def create_csvs_from_outputs(prop_committed, betas, run_length, social_structure
 
 
 if __name__ == '__main__':
-    betas = np.linspace(0.1, 1, num=1)
-    ps = np.linspace(0.02, 0.2, num=1)
-    qs = [1]
-    social_structures = ['InVS15']
-    run_length = 10**2
-    import warnings
-    warnings.filterwarnings("ignore")
+    # betas = np.linspace(0.05, 1, num=20)
+    # ps = np.linspace(0.01, 0.2, num=20)
+    # qs = [0]
+    # social_structures = ['InVS15', 'LyonSchool']
+    # run_length = 10**5
+    # import warnings
+    # warnings.filterwarnings("ignore")
     
-    run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
-    create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
-
+    # run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+    # create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
+    
+    
+    ###This is the next job
+    
+    # betas = np.linspace(0, 1, num=51)
+    # ps = [0.03]
+    # qs = [0]
+    # social_structures = ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
+    # run_length = 10**5
+    # import warnings
+    # warnings.filterwarnings("ignore")
+    
+    # run_multiprocessing_ensemble(ps, betas, run_length, social_structures, qs)
+    # create_csvs_from_outputs(ps, betas, run_length, social_structures, qs)
+    
+    
+    create_and_integrate('InVS15', 0.4, 10**4, 1, 0.03)
 #%%
