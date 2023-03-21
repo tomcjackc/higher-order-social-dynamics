@@ -504,9 +504,9 @@ def delete_csvs(prop_committed, betas, ensemble_size, run_length, social_structu
 
 
 if __name__ == '__main__':
-    betas = np.linspace(0.1, 1, num=10)
-    ps = np.linspace(0.02, 0.2, num=10)
-    qs = [0,1]
+    betas = np.linspace(0.05, 1, num=20)
+    ps = np.linspace(0.01, 0.2, num=20)
+    qs = [1]
     social_structures = ['InVS15']
 
     run_length = 10**5
