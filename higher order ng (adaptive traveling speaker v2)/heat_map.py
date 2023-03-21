@@ -18,9 +18,9 @@ import csv
 #mpl.style.use('report_style.mplstyle')
 
 prop_committed = [0.03]#np.linspace(0.01, 0.2, 20)
-betas = np.linspace(0, 1, 51)
-ensemble_size = 10
-run_length = 10**6
+betas = [0.76]
+ensemble_size = 1
+run_length = 10**5
 qs = [1]
 social_structures = ['InVS15']#['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']
 
