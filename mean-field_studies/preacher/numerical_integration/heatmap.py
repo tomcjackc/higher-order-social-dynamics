@@ -4,11 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
 
-betas = np.linspace(0.5, 1, num=2)
-ps = np.linspace(0.1, 0.2, num=2)
-qs = [0]
+betas = np.linspace(0.05, 1, num=20)
+ps = np.linspace(0.01, 0.2, num=20)
+qs = [0, 1]
 social_structures = ['InVS15']
-run_length = 10**3
+run_length = 10**5
 
 for social_structure in social_structures:
     
@@ -34,10 +34,12 @@ for social_structure in social_structures:
         #     plt.savefig(f'figures/fig3b_{social_structure}_{p}_q={q}_{run_length}.pdf')
         #     plt.show()
         
-        colormap = sb.color_palette(palette="RdBu", n_colors=None, desat=None, as_cmap=True)
-        sb.heatmap(data_B-data_A, cbar_kws={'label':r'$n_{B}^{\ast}-n_{A}^{\ast}$'}, cmap=colormap, center=0)
-        plt.xlabel('p')
+        plt.figure()
+        colormap = sb.color_palette(palette="RdBu_r", n_colors=None, desat=None, as_cmap=True)
+        sb.heatmap(data_B-data_A, cbar_kws={'label':r'$f_{B}^{\ast}-f_{A}^{\ast}$'}, cmap=colormap, center=0)
+        plt.xlabel(r'$p$')
         plt.ylabel(r'$\beta$')
-        plt.savefig(f'figures/heatmap_res_{len(betas)}x{len(ps)}_{social_structure}_{q}_{run_length}.pdf')
+        plt.savefig(f'figures/heatmap_res_{len(betas)}x{len(ps)}_{social_structure}_{q}_{run_length}.pdf', bbox_inches='tight')
+        plt.show()
 
 #%%

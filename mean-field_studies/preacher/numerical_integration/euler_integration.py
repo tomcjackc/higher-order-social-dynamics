@@ -70,7 +70,7 @@ class system():
 
         self.dist = dist
         if self.dist in ['InVS15', 'LyonSchool', 'SFHH', 'Thiers13']:
-            edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{dist}.json')
+            edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{dist}.json')
             self.N = len(unique_id)
         elif type(self.dist) == list:
             self.N = self.dist[1]
@@ -107,7 +107,7 @@ class system():
                 p = self.gamma/self.N #we take gamma to be the mean of the distribution, so gamma=Np
                 return binom.pmf(n-1, self.N-1, p)
             if self.dist == 'Thiers13':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -115,7 +115,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'SFHH':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -123,7 +123,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'LyonSchool':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 if type(n) == type(np.array([])):
@@ -131,7 +131,7 @@ class system():
                 else:
                     return dict_edges.get(n, 0)
             if self.dist == 'InVS15':
-                edges, unique_id = get_edges_and_uniques(f'../data/aggr_15min_cliques_thr3_{self.dist}.json')
+                edges, unique_id = get_edges_and_uniques(f'../../../data/aggr_15min_cliques_thr3_{self.dist}.json')
                 self.no_edges = len(edges[0])
                 dict_edges = count_lists(edges[0])
                 
@@ -405,8 +405,8 @@ if __name__ == '__main__':
     betas = np.linspace(0.1, 1, num=10)
     ps = np.linspace(0.02, 0.2, num=10)
     qs = [1]
-    social_structures = ['InVS15', 'LyonSchool']
-    run_length = 10**5
+    social_structures = ['InVS15']
+    run_length = 10**3
     import warnings
     warnings.filterwarnings("ignore")
     
